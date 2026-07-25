@@ -24,6 +24,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
     DateTime.now().day,
   );
 
+  PeriodRecord? _findLastRecordBefore(DateTime date) {
+    if (_actualRecords.isEmpty) return null;
+
+    final targetDate = DateTime(date.year, date.month, date.day);
+
+    final sorted = [..._actualRecords]
+      ..sort((a, b) => a.startDate.compareTo(b.startDate));
+
+    PeriodRecord? candidate;
+    for (final record in sorted) {
+      final recStart = DateTime(
+        record.startDate.year,
+        record.startDate.month,
+        record.startDate.day,
+      );
+      if (recStart.isBefore(targetDate) || recStart.isAtSameMomentAs(targetDate)) {
+        candidate = record;
+      } else {
+        break;
+      }
+    }
+
+    return candidate;
+  }
+
   List<PeriodRecord> _actualRecords = [];
   List<PeriodRecord> _predictedRecords = [];
 
@@ -138,44 +163,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  void _refreshPredictions() {
-    _predictedRecords = _generatePredictions(
-      records: _actualRecords,
-      periodLength: _fallbackPeriodLength,
-      cycleLength: _fallbackCycleLength,
-    );
-  }
-
-  CycleInfo? get _effectiveCycleInfo {
-    if (_actualRecords.isEmpty) {
-      return null;
-    }
-
-    final sortedRecords = [..._actualRecords]
-      ..sort(
-        (first, second) =>
-            first.startDate.compareTo(second.startDate),
-      );
-
-    final predictedCycleLength =
-        CycleCalculator.calculatePredictedCycleLength(
-      records: sortedRecords,
-      fallbackCycleLength: _fallbackCycleLength,
-    );
-
-    final predictedPeriodLength =
-        CycleCalculator.calculatePredictedPeriodLength(
-      records: sortedRecords,
-      fallbackPeriodLength: _fallbackPeriodLength,
-    );
-
-    return CycleInfo(
-      lastPeriodDate: sortedRecords.last.startDate,
-      periodLength: predictedPeriodLength,
-      cycleLength: predictedCycleLength,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -236,38 +223,39 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        24,
-        12,
-        24,
-        32,
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Döngü takvimin',
             style: TextStyle(
-              fontSize: 26,
+              fontSize: 24,
               fontWeight: FontWeight.w700,
               color: Color(0xFF2D2733),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           const Text(
-            'Gerçek ve tahmini regl günlerini buradan takip edebilirsin.',
+            'Gerçek ve tahmini regl günlerini takip et.',
             style: TextStyle(
-              fontSize: 15,
+              fontSize: 14,
               color: Color(0xFF77707E),
             ),
           ),
-          const SizedBox(height: 16),
-          _buildCalendarCard(),
-          const SizedBox(height: 16),
-          _buildSelectedDayCard(),
-          const SizedBox(height: 20),
-          _buildLegend(),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Column(
+              children: [
+                _buildCalendarCard(),
+                const SizedBox(height: 12),
+                _buildSelectedDayCard(),
+                const SizedBox(height: 12),
+                _buildLegend(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -276,29 +264,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget _buildCalendarCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(
-        18,
-        18,
-        18,
-        22,
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildMonthHeader(),
-          const SizedBox(height: 22),
+          const SizedBox(height: 14),
           _buildWeekDayHeader(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           _buildCalendarGrid(),
         ],
       ),
@@ -314,10 +298,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           onPressed: _showPreviousMonth,
         ),
         Text(
-          '${_monthNames[_visibleMonth.month - 1]} '
-          '${_visibleMonth.year}',
+          '${_monthNames[_visibleMonth.month - 1]} ${_visibleMonth.year}',
           style: const TextStyle(
-            fontSize: 19,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: Color(0xFF2D2733),
           ),
@@ -336,16 +319,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }) {
     return Material(
       color: const Color(0xFFF3EFF8),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: SizedBox(
-          width: 42,
-          height: 42,
+          width: 36,
+          height: 36,
           child: Icon(
             icon,
             color: const Color(0xFF7657A8),
+            size: 20,
           ),
         ),
       ),
@@ -392,12 +376,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: itemCount,
-      gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 6,
-        childAspectRatio: 1,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+        childAspectRatio: 1.25,
       ),
       itemBuilder: (context, index) {
         final dayNumber = index - leadingEmptyCells + 1;
@@ -423,49 +406,81 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final isToday = _isSameDay(date, today);
     final isSelected = _isSameDay(date, _selectedDate);
 
-    final actualRecord =
-        CycleCalculator.findActualRecordForDate(
+    final actualRecord = CycleCalculator.findActualRecordForDate(
       date: date,
       records: _actualRecords,
     );
 
     final isActualPeriodDay = actualRecord != null;
 
-    final isPredictedPeriodDay =
-        !isActualPeriodDay &&
+    final isPredictedPeriodDay = !isActualPeriodDay &&
         CycleCalculator.isPredictedPeriodDay(
           date: date,
           predictedRecords: _predictedRecords,
         );
 
-    final phaseColor = _getDayColor(
-      date: date,
-      isActualPeriodDay: isActualPeriodDay,
-      isPredictedPeriodDay: isPredictedPeriodDay,
-    );
+    final Color? bgTileColor = isActualPeriodDay
+        ? const Color(0xFFD9577D)
+        : isPredictedPeriodDay
+            ? const Color(0xFFFCE4EC)
+            : null;
 
-    final textColor = isActualPeriodDay
+    final Color textColor = isActualPeriodDay
         ? Colors.white
-        : const Color(0xFF2D2733);
+        : isPredictedPeriodDay
+            ? const Color(0xFFC74469)
+            : const Color(0xFF2D2733);
+
+    bool isFertileDay = false;
+    bool isOvulationDay = false;
+    bool isPmsDay = false;
+
+    if (!isActualPeriodDay && !isPredictedPeriodDay) {
+      final relevantRecord = _findLastRecordBefore(date);
+
+      if (relevantRecord != null) {
+        final pastCycleInfo = CycleInfo(
+          lastPeriodDate: relevantRecord.startDate,
+          periodLength: relevantRecord.periodLength,
+          cycleLength: _fallbackCycleLength,
+        );
+
+        isFertileDay = CycleCalculator.isFertileDay(
+          date: date,
+          cycleInfo: pastCycleInfo,
+        );
+
+        isOvulationDay = CycleCalculator.isOvulationDay(
+          date: date,
+          cycleInfo: pastCycleInfo,
+        );
+
+        final cycleResult = CycleCalculator.calculate(
+          pastCycleInfo,
+          currentDate: date,
+        );
+
+        isPmsDay = cycleResult.phaseName.contains('PMS');
+      }
+    }
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         onTap: () {
           setState(() {
             _selectedDate = date;
           });
         },
         child: Container(
-          margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: phaseColor,
+            color: bgTileColor,
             shape: BoxShape.circle,
             border: isSelected
                 ? Border.all(
                     color: const Color(0xFF7657A8),
-                    width: 2.5,
+                    width: 2,
                   )
                 : isToday
                     ? Border.all(
@@ -474,133 +489,57 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       )
                     : isPredictedPeriodDay
                         ? Border.all(
-                            color: const Color(0xFFD9799A),
+                            color: const Color(0xFFE4A2B5),
                             width: 1,
                           )
                         : null,
           ),
-          alignment: Alignment.center,
-          child: Text(
-            '${date.day}',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: isSelected || isToday
-                  ? FontWeight.w700
-                  : FontWeight.w500,
-              color: textColor,
-            ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Transform.translate(
+                offset: const Offset(0, -1.0),
+                child: Text(
+                  '${date.day}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected || isToday || isActualPeriodDay || isOvulationDay
+                        ? FontWeight.w700
+                        : FontWeight.w500,
+                    color: isOvulationDay ? const Color(0xFFD48800) : textColor,
+                    height: 1.0,
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 2,
+                child: isOvulationDay
+                    ? const Text(
+                        '👑',
+                        style: TextStyle(fontSize: 7, height: 1),
+                      )
+                    : (isFertileDay || isPmsDay)
+                        ? Container(
+                            width: 3.5,
+                            height: 3.5,
+                            decoration: BoxDecoration(
+                              color: isPmsDay
+                                  ? const Color(0xFF8E24AA)
+                                  : const Color(0xFFE6B800),
+                              shape: BoxShape.circle,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Color? _getDayColor({
-    required DateTime date,
-    required bool isActualPeriodDay,
-    required bool isPredictedPeriodDay,
-  }) {
-    if (isActualPeriodDay) {
-      return const Color(0xFFD9577D);
-    }
-
-    if (isPredictedPeriodDay) {
-      return const Color(0xFFF8D7E1);
-    }
-
-    final cycleInfo = _effectiveCycleInfo;
-
-    if (cycleInfo == null) {
-      return null;
-    }
-
-    return _getPhaseColor(
-      date,
-      cycleInfo,
-    );
-  }
-
-  int _getCycleDay(
-    DateTime date,
-    CycleInfo cycleInfo,
-  ) {
-    final selectedDate = _dateOnly(date);
-    final lastPeriodDate = _dateOnly(
-      cycleInfo.lastPeriodDate,
-    );
-
-    final difference =
-        selectedDate.difference(lastPeriodDate).inDays;
-
-    return ((difference % cycleInfo.cycleLength) +
-                cycleInfo.cycleLength) %
-            cycleInfo.cycleLength +
-        1;
-  }
-
-  String _getPhaseName(
-    DateTime date,
-    CycleInfo cycleInfo,
-  ) {
-    final cycleDay = _getCycleDay(
-      date,
-      cycleInfo,
-    );
-
-    final ovulationDay = cycleInfo.cycleLength - 14;
-    final fertileStartDay = ovulationDay - 5;
-
-    if (cycleDay <= cycleInfo.periodLength) {
-      return 'Regl dönemi';
-    }
-
-    if (cycleDay >= fertileStartDay &&
-        cycleDay <= ovulationDay) {
-      return 'Doğurgan dönem';
-    }
-
-    if (cycleDay < fertileStartDay) {
-      return 'Yenilenme dönemi';
-    }
-
-    return 'Dinlenme dönemi';
-  }
-
-  Color? _getPhaseColor(
-    DateTime date,
-    CycleInfo? cycleInfo,
-  ) {
-    if (cycleInfo == null) {
-      return null;
-    }
-
-    final cycleDay = _getCycleDay(
-      date,
-      cycleInfo,
-    );
-
-    final ovulationDay = cycleInfo.cycleLength - 14;
-    final fertileStartDay = ovulationDay - 5;
-
-    if (cycleDay <= cycleInfo.periodLength) {
-      return const Color(0xFFF4A8BC);
-    }
-
-    if (cycleDay >= fertileStartDay &&
-        cycleDay <= ovulationDay) {
-      return const Color(0xFFF3CF62);
-    }
-
-    if (cycleDay < fertileStartDay) {
-      return const Color(0xFF9DD8AE);
-    }
-
-    return const Color(0xFFCDB6F5);
-  }
-
   Widget _buildSelectedDayCard() {
-    final ongoingRecord =
-    _actualRecords
+    final ongoingRecord = _actualRecords
         .where((record) => record.isOngoing)
         .cast<PeriodRecord?>()
         .firstWhere(
@@ -608,121 +547,122 @@ class _CalendarScreenState extends State<CalendarScreen> {
           orElse: () => null,
         );
 
-    final hasOngoingPeriod = ongoingRecord != null;
+    final canFinishOngoingPeriod = ongoingRecord != null &&
+        !_dateOnly(_selectedDate).isBefore(
+          _dateOnly(ongoingRecord.startDate),
+        );
 
-    final actualRecord =
-        CycleCalculator.findActualRecordForDate(
+    final actualRecord = CycleCalculator.findActualRecordForDate(
       date: _selectedDate,
       records: _actualRecords,
     );
 
     final isActualPeriodDay = actualRecord != null;
 
-    final isPredictedPeriodDay =
-        !isActualPeriodDay &&
+    final isPredictedPeriodDay = !isActualPeriodDay &&
         CycleCalculator.isPredictedPeriodDay(
           date: _selectedDate,
           predictedRecords: _predictedRecords,
         );
 
-    final cycleInfo = _effectiveCycleInfo;
-
-    String statusText;
+    String statusText = '';
+    Widget phaseLeadingWidget;
 
     if (isActualPeriodDay) {
-      final dayNumber = _selectedDate
-              .difference(actualRecord.startDate)
-              .inDays +
-          1;
-
-      statusText =
-          'Gerçek regl kaydı · $dayNumber. gün';
+      final dayNumber =
+          _selectedDate.difference(actualRecord.startDate).inDays + 1;
+      statusText = 'Gerçek regl · $dayNumber. gün';
+      phaseLeadingWidget = const Icon(
+        Icons.water_drop_rounded,
+        color: Color(0xFFD9577D),
+        size: 28,
+      );
     } else if (isPredictedPeriodDay) {
-      statusText = 'Luna tarafından tahmin edilen regl günü';
-    } else if (cycleInfo != null) {
-      final cycleDay = _getCycleDay(
-        _selectedDate,
-        cycleInfo,
+      statusText = 'Tahmini regl günü';
+      phaseLeadingWidget = const Icon(
+        Icons.water_drop_outlined,
+        color: Color(0xFFE4A2B5),
+        size: 28,
       );
-
-      final phaseName = _getPhaseName(
-        _selectedDate,
-        cycleInfo,
-      );
-
-      statusText = '$cycleDay. döngü günü · $phaseName';
     } else {
-      statusText = 'Bu tarih için henüz bir döngü kaydı yok.';
-    }
+      final relevantRecord = _findLastRecordBefore(_selectedDate);
 
-    final cardColor = isActualPeriodDay
-        ? const Color(0xFFD9577D)
-        : isPredictedPeriodDay
-            ? const Color(0xFFF8D7E1)
-            : _getPhaseColor(
-                  _selectedDate,
-                  cycleInfo,
-                ) ??
-                const Color(0xFFF3EFF8);
+      if (relevantRecord != null) {
+        final pastCycleInfo = CycleInfo(
+          lastPeriodDate: relevantRecord.startDate,
+          periodLength: relevantRecord.periodLength,
+          cycleLength: _fallbackCycleLength,
+        );
+
+        final isOvulation = CycleCalculator.isOvulationDay(
+          date: _selectedDate,
+          cycleInfo: pastCycleInfo,
+        );
+
+        final cycleResult = CycleCalculator.calculate(
+          pastCycleInfo,
+          currentDate: _selectedDate,
+        );
+
+        if (isOvulation) {
+          statusText = '${cycleResult.cycleDay}. gün · Yumurtlama';
+          phaseLeadingWidget = const Text('👑', style: TextStyle(fontSize: 24));
+        } else {
+          statusText =
+              '${cycleResult.cycleDay}. gün · ${cycleResult.phaseName}';
+          phaseLeadingWidget = Text(
+            cycleResult.phaseIcon,
+            style: const TextStyle(fontSize: 24),
+          );
+        }
+      } else {
+        statusText = 'Kayıt yok';
+        phaseLeadingWidget = const Text('📅', style: TextStyle(fontSize: 24));
+      }
+    }
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.035),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '${_selectedDate.day}',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: isActualPeriodDay
-                        ? Colors.white
-                        : const Color(0xFF2D2733),
-                  ),
-                ),
+              SizedBox(
+                width: 36,
+                height: 36,
+                child: Center(child: phaseLeadingWidget),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${_selectedDate.day} '
-                      '${_monthNames[_selectedDate.month - 1]} '
-                      '${_selectedDate.year}',
+                      '${_selectedDate.day} ${_monthNames[_selectedDate.month - 1]} ${_selectedDate.year}',
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF2D2733),
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 2),
                     Text(
                       statusText,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Color(0xFF77707E),
                       ),
                     ),
@@ -731,224 +671,313 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: isActualPeriodDay
-    ? OutlinedButton.icon(
-        onPressed: _isSaving
-            ? null
-            : () => _confirmRemoveRecord(actualRecord),
-        icon: const Icon(Icons.delete_outline_rounded),
-        label: const Text('Regl kaydını kaldır'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFFC74469),
-          side: const BorderSide(
-            color: Color(0xFFE4A2B5),
-          ),
-          padding: const EdgeInsets.symmetric(
-            vertical: 14,
-          ),
-        ),
-      )
-    : hasOngoingPeriod
-        ? FilledButton.icon(
-            onPressed: _isSaving
-                ? null
-                : _finishCurrentPeriod,
-            icon: const Icon(Icons.check_circle_outline),
-            label: const Text('Reglim Bitti'),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFFC74469),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                vertical: 14,
-              ),
-            ),
-          )
-        : FilledButton.icon(
-            onPressed: _isSaving
-                ? null
-                : _confirmAddRecord,
-            icon: _isSaving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
+            child: canFinishOngoingPeriod
+                ? Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        height: 40,
+                        child: FilledButton.icon(
+                          onPressed: _isSaving ? null : _finishCurrentPeriod,
+                          icon: const Icon(Icons.check_circle_outline, size: 18),
+                          label: const Text('Reglim Bitti', style: TextStyle(fontSize: 13)),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF7657A8),
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: OutlinedButton.icon(
+                                onPressed: _isSaving ? null : _handleStartPeriod,
+                                icon: const Icon(Icons.add_circle_outline, size: 16),
+                                label: const Text('Regl Başlat', style: TextStyle(fontSize: 12)),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF7657A8),
+                                  side: const BorderSide(color: Color(0xFFB8A4D6)),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: SizedBox(
+                              height: 40,
+                              child: OutlinedButton.icon(
+                                onPressed: _isSaving
+                                    ? null
+                                    : () => _confirmRemoveRecord(actualRecord ?? ongoingRecord),
+                                icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                                label: const Text('Kaydı Kaldır', style: TextStyle(fontSize: 12)),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFC74469),
+                                  side: const BorderSide(color: Color(0xFFE4A2B5)),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   )
-                : const Icon(Icons.water_drop_outlined),
-            label: const Text(
-              'Regl Başladı',
-            ),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF7657A8),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                vertical: 14,
-              ),
-            ),
-          ),
+                : isActualPeriodDay
+                    ? SizedBox(
+                        height: 40,
+                        child: OutlinedButton.icon(
+                          onPressed: _isSaving
+                              ? null
+                              : () => _confirmRemoveRecord(actualRecord),
+                          icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                          label: const Text('Regl kaydını kaldır', style: TextStyle(fontSize: 13)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFC74469),
+                            side: const BorderSide(color: Color(0xFFE4A2B5)),
+                          ),
+                        ),
+                      )
+                    : SizedBox(
+                        height: 40,
+                        child: FilledButton.icon(
+                          onPressed: _isSaving ? null : _handleStartPeriod,
+                          icon: _isSaving
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.water_drop_outlined, size: 18),
+                          label: const Text('Regl Başladı', style: TextStyle(fontSize: 13)),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF7657A8),
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _handleStartPeriod() async {
+    final ongoingRecords =
+        _actualRecords.where((record) => record.isOngoing).toList();
+
+    if (ongoingRecords.isEmpty) {
+      await _confirmAddRecord();
+      return;
+    }
+
+    final ongoingRecord = ongoingRecords.first;
+    final selectedDate = _dateOnly(_selectedDate);
+    final ongoingStartDate = _dateOnly(ongoingRecord.startDate);
+
+    if (selectedDate.isBefore(ongoingStartDate)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Yeni regl başlangıcı, devam eden kaydın başlangıcından önce olamaz.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final shouldProceed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Devam eden regl kaydı var'),
+          content: Text(
+            '${_formatDate(ongoingStartDate)} tarihinde başlayan ve henüz bitişi girilmemiş '
+            'bir kaydın bulunuyor.\n\n'
+            'Yeni regl başlatıldığında, önceki kaydın süresi varsayılan olarak 4 gün kabul edilip '
+            'kapatılacak ve yeni döngün kaydedilecektir. Onaylıyor musun?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7657A8),
+              ),
+              child: const Text('Onayla ve Başlat'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldProceed != true) return;
+
+    await _resolveOngoingPeriodAndStartNew();
+  }
+
+  Future<void> _resolveOngoingPeriodAndStartNew() async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final ongoingRecord = _actualRecords.firstWhere((r) => r.isOngoing);
+      final defaultPeriodLen = ongoingRecord.periodLength > 0 ? ongoingRecord.periodLength : 4;
+      final calculatedEndDate = ongoingRecord.startDate.add(Duration(days: defaultPeriodLen - 1));
+
+      await StorageService.finishOngoingPeriod(calculatedEndDate);
+
+      await StorageService.startPeriod(
+        _selectedDate,
+        predictedLength: 4,
+      );
+
+      await _loadCalendarData(showLoading: false);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Önceki kayıt 4 gün olarak tamamlandı ve yeni regl başlatıldı.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Yeni regl başlangıcı kaydedilemedi.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   Future<void> _confirmAddRecord() async {
-  const defaultPredictedLength = 4;
+    const defaultPredictedLength = 4;
 
-  final shouldAdd = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text(
-          '🌙 Yeni Döngü',
-        ),
-        content: Text(
-          '${_formatDate(_selectedDate)} tarihinde regl başladığını onaylıyor musun?\n\n'
-          'Luna şimdilik 4 günlük geçici bir kayıt oluşturacak. '
-          'Reglin bittiğinde bunu tek dokunuşla güncelleyebilirsin.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop(false);
-            },
-            child: const Text('Vazgeç'),
+    final shouldAdd = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('🌙 Yeni Döngü'),
+          content: Text(
+            '${_formatDate(_selectedDate)} tarihinde regl başladığını onaylıyor musun?\n\n'
+            'Luna şimdilik 4 günlük geçici bir kayıt oluşturacak.',
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop(true);
-            },
-            child: const Text('Regl Başladı'),
-          ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Regl Başladı'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldAdd != true) return;
+
+    await _addPeriodRecord(periodLength: defaultPredictedLength);
+  }
+
+  Future<void> _addPeriodRecord({required int periodLength}) async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await StorageService.startPeriod(
+        _selectedDate,
+        predictedLength: periodLength,
       );
-    },
-  );
 
-  if (shouldAdd != true) {
-    return;
-  }
+      await _loadCalendarData(showLoading: false);
 
-  await _addPeriodRecord(
-    periodLength: defaultPredictedLength,
-  );
-}
+      if (!mounted) return;
 
- 
-  Future<void> _addPeriodRecord({
-  required int periodLength,
-}) async {
-  setState(() {
-    _isSaving = true;
-  });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Regl başlangıcı kaydedildi.')),
+      );
+    } on StateError catch (error) {
+      if (!mounted) return;
+      final message = error.message == 'An ongoing period already exists.'
+          ? 'Devam eden bir regl kaydı zaten var.'
+          : 'Bu tarih için zaten bir regl kaydı bulunuyor.';
 
-  try {
-    await StorageService.startPeriod(
-      _selectedDate,
-      predictedLength: periodLength,
-    );
-
-    await _loadCalendarData(
-      showLoading: false,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Regl başlangıcı kaydedildi.',
-        ),
-      ),
-    );
-  } on StateError catch (error) {
-    if (!mounted) {
-      return;
-    }
-
-    final message = error.message == 'An ongoing period already exists.'
-        ? 'Devam eden bir regl kaydı zaten var.'
-        : 'Bu tarih için zaten bir regl kaydı bulunuyor.';
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
-  } catch (_) {
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Regl başlangıcı kaydedilemedi.',
-        ),
-      ),
-    );
-  } finally {
-    if (mounted) {
-      setState(() {
-        _isSaving = false;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Regl başlangıcı kaydedilemedi.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
-}
 
-Future<void> _finishCurrentPeriod() async {
-  setState(() {
-    _isSaving = true;
-  });
+  Future<void> _finishCurrentPeriod() async {
+    setState(() {
+      _isSaving = true;
+    });
 
-  try {
-    await StorageService.finishOngoingPeriod(_selectedDate);
-
-    await _loadCalendarData(showLoading: false);
-  } finally {
-    if (mounted) {
-      setState(() {
-        _isSaving = false;
-      });
+    try {
+      await StorageService.finishOngoingPeriod(_selectedDate);
+      await _loadCalendarData(showLoading: false);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
-}
 
-  Future<void> _confirmRemoveRecord(
-    PeriodRecord record,
-  ) async {
+  Future<void> _confirmRemoveRecord(PeriodRecord record) async {
     final shouldRemove = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text(
-            'Regl kaydı kaldırılsın mı?',
-          ),
+          title: const Text('Regl kaydı kaldırılsın mı?'),
           content: Text(
-            '${_formatDate(record.startDate)} tarihinde başlayan '
-            '${record.periodLength} günlük regl kaydı kaldırılacak.',
+            '${_formatDate(record.startDate)} tarihinde başlayan kayıt kaldırılacak.',
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false);
-              },
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Vazgeç'),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true);
-              },
+              onPressed: () => Navigator.of(dialogContext).pop(true),
               style: FilledButton.styleFrom(
-                backgroundColor:
-                    const Color(0xFFC74469),
+                backgroundColor: const Color(0xFFC74469),
               ),
               child: const Text('Kaldır'),
             ),
@@ -957,56 +986,31 @@ Future<void> _finishCurrentPeriod() async {
       },
     );
 
-    if (shouldRemove != true) {
-      return;
-    }
+    if (shouldRemove != true) return;
 
     await _removePeriodRecord(record);
   }
 
-  Future<void> _removePeriodRecord(
-    PeriodRecord record,
-  ) async {
+  Future<void> _removePeriodRecord(PeriodRecord record) async {
     setState(() {
       _isSaving = true;
     });
 
     try {
-      final removed =
-          await StorageService.removePeriodRecord(
-        record.startDate,
-      );
+      final removed = await StorageService.removePeriodRecord(record.startDate);
+      if (!removed) throw StateError('Record not found.');
 
-      if (!removed) {
-        throw StateError('Record not found.');
-      }
+      await _loadCalendarData(showLoading: false);
 
-      await _loadCalendarData(
-        showLoading: false,
-      );
-
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Regl kaydı kaldırıldı.',
-          ),
-        ),
+        const SnackBar(content: Text('Regl kaydı kaldırıldı.')),
       );
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Regl kaydı kaldırılamadı.',
-          ),
-        ),
+        const SnackBar(content: Text('Regl kaydı kaldırılamadı.')),
       );
     } finally {
       if (mounted) {
@@ -1019,6 +1023,7 @@ Future<void> _finishCurrentPeriod() async {
 
   Widget _buildLegend() {
     return const Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           children: [
@@ -1030,41 +1035,27 @@ Future<void> _finishCurrentPeriod() async {
             ),
             Expanded(
               child: _LegendItem(
-                color: Color(0xFFF8D7E1),
+                color: Color(0xFFFCE4EC),
                 label: 'Tahmini regl',
-                borderColor: Color(0xFFD9799A),
+                borderColor: Color(0xFFE4A2B5),
               ),
             ),
           ],
         ),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: _LegendItem(
-                color: Color(0xFF9DD8AE),
-                label: 'Yenilenme',
-              ),
-            ),
-            Expanded(
-              child: _LegendItem(
-                color: Color(0xFFF3CF62),
+                color: Color(0xFFE6B800),
                 label: 'Doğurgan dönem',
               ),
             ),
-          ],
-        ),
-        SizedBox(height: 12),
-        Row(
-          children: [
             Expanded(
               child: _LegendItem(
-                color: Color(0xFFCDB6F5),
-                label: 'Dinlenme',
+                color: Color(0xFF8E24AA),
+                label: 'PMS dönemi',
               ),
-            ),
-            Expanded(
-              child: SizedBox.shrink(),
             ),
           ],
         ),
@@ -1078,8 +1069,11 @@ Future<void> _finishCurrentPeriod() async {
         _visibleMonth.year,
         _visibleMonth.month - 1,
       );
-
-      _refreshPredictions();
+      _predictedRecords = _generatePredictions(
+        records: _actualRecords,
+        periodLength: _fallbackPeriodLength,
+        cycleLength: _fallbackCycleLength,
+      );
     });
   }
 
@@ -1089,80 +1083,60 @@ Future<void> _finishCurrentPeriod() async {
         _visibleMonth.year,
         _visibleMonth.month + 1,
       );
-
-      _refreshPredictions();
+      _predictedRecords = _generatePredictions(
+        records: _actualRecords,
+        periodLength: _fallbackPeriodLength,
+        cycleLength: _fallbackCycleLength,
+      );
     });
   }
 
-  DateTime _dateOnly(DateTime date) {
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-    );
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  bool _isSameDay(
-    DateTime firstDate,
-    DateTime secondDate,
-  ) {
-    return firstDate.year == secondDate.year &&
-        firstDate.month == secondDate.month &&
-        firstDate.day == secondDate.day;
+  DateTime _dateOnly(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day} '
-        '${_monthNames[date.month - 1]} '
-        '${date.year}';
+    return '${date.day} ${_monthNames[date.month - 1]} ${date.year}';
   }
 }
 
 class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  final Color? borderColor;
+
   const _LegendItem({
     required this.color,
     required this.label,
     this.borderColor,
   });
 
-  final Color color;
-  final String label;
-  final Color? borderColor;
-
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 14,
-          height: 14,
+          width: 12,
+          height: 12,
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
-            border: Border.all(
-              color: borderColor ??
-                  Colors.black.withValues(alpha: 0.08),
-              width: borderColor == null ? 0.5 : 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.45),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
-              ),
-            ],
+            border: borderColor != null
+                ? Border.all(color: borderColor!, width: 1)
+                : null,
           ),
         ),
-        const SizedBox(width: 7),
-        Flexible(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF77707E),
-            ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF77707E),
           ),
         ),
       ],

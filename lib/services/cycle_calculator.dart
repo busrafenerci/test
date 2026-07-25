@@ -5,6 +5,7 @@ enum CyclePhase {
   menstruation,
   renewal,
   fertile,
+  pms,
   rest,
 }
 
@@ -29,6 +30,8 @@ class CycleResult {
         return 'Yenilenme';
       case CyclePhase.fertile:
         return 'Verimli dönem';
+      case CyclePhase.pms:
+        return 'PMS dönemi';
       case CyclePhase.rest:
         return 'Dinlenme';
     }
@@ -42,6 +45,8 @@ class CycleResult {
         return '🌱';
       case CyclePhase.fertile:
         return '🌸';
+      case CyclePhase.pms:
+        return '🔮';
       case CyclePhase.rest:
         return '💤';
     }
@@ -53,9 +58,87 @@ class CycleCalculator {
 
   static const int _historyLimit = 3;
 
-  // ---------------------------------------------------------------------------
-  // Existing calculation used by HomeScreen
-  // ---------------------------------------------------------------------------
+  /// Verilen tarihin döngünün kaçıncı günü olduğunu hesaplar
+  static int getCycleDay({
+    required DateTime date,
+    required CycleInfo cycleInfo,
+  }) {
+    final targetDate = _dateOnly(date);
+    final lastPeriodDate = _dateOnly(cycleInfo.lastPeriodDate);
+
+    final differenceInDays = targetDate.difference(lastPeriodDate).inDays;
+    final normalizedDifference = differenceInDays < 0 ? 0 : differenceInDays;
+
+    return (normalizedDifference % cycleInfo.cycleLength) + 1;
+  }
+
+  /// Verilen tarihten ÖNCEKİ en yakın gerçek regl kaydını bulur (Takvim ve Ana Sayfa ortak mantığı)
+  static PeriodRecord? findLastRecordBefore(DateTime date, List<PeriodRecord> records) {
+    if (records.isEmpty) return null;
+
+    final targetDate = _dateOnly(date);
+
+    final sorted = [...records]
+      ..sort((a, b) => a.startDate.compareTo(b.startDate));
+
+    PeriodRecord? candidate;
+    for (final record in sorted) {
+      final recStart = _dateOnly(record.startDate);
+      if (recStart.isBefore(targetDate) || recStart.isAtSameMomentAs(targetDate)) {
+        candidate = record;
+      } else {
+        break;
+      }
+    }
+
+    return candidate;
+  }
+
+  /// Verilen tarihin doğurgan (verimli) döneme denk gelip gelmediğini kontrol eder
+  /// Verilen tarihin doğurgan (verimli) döneme denk gelip gelmediğini kontrol eder
+  static bool isFertileDay({
+    required DateTime date,
+    required CycleInfo cycleInfo,
+  }) {
+    final cycleDay = getCycleDay(date: date, cycleInfo: cycleInfo);
+    final ovulationDay = cycleInfo.cycleLength - 14;
+    final fertileStart = ovulationDay - 4;
+    final fertileEnd = ovulationDay + 1;
+
+    return cycleDay >= fertileStart && cycleDay <= fertileEnd;
+  }
+
+  /// Verilen tarihin tam yumurtlama (ovülasyon) gününe denk gelip gelmediğini kontrol eder
+  static bool isOvulationDay({
+    required DateTime date,
+    required CycleInfo cycleInfo,
+  }) {
+    final cycleDay = getCycleDay(date: date, cycleInfo: cycleInfo);
+    final ovulationDay = cycleInfo.cycleLength - 14;
+
+    return cycleDay == ovulationDay;
+  }
+
+  static PeriodRecord? findActualRecordForDate({
+    required DateTime date,
+    required List<PeriodRecord> records,
+  }) {
+    for (final record in records) {
+      if (record.containsDate(date)) {
+        return record;
+      }
+    }
+    return null;
+  }
+
+  static bool isPredictedPeriodDay({
+    required DateTime date,
+    required List<PeriodRecord> predictedRecords,
+  }) {
+    return predictedRecords.any(
+      (record) => record.containsDate(date),
+    );
+  }
 
   static CycleResult calculate(
     CycleInfo cycleInfo, {
@@ -65,22 +148,9 @@ class CycleCalculator {
       currentDate ?? DateTime.now(),
     );
 
-    final lastPeriodDate = _dateOnly(
-      cycleInfo.lastPeriodDate,
-    );
+    final cycleDay = getCycleDay(date: today, cycleInfo: cycleInfo);
 
-    final differenceInDays = today
-        .difference(lastPeriodDate)
-        .inDays;
-
-    final normalizedDifference =
-        differenceInDays < 0 ? 0 : differenceInDays;
-
-    final cycleDay =
-        (normalizedDifference % cycleInfo.cycleLength) + 1;
-
-    final daysUntilNextPeriod =
-        cycleInfo.cycleLength - cycleDay + 1;
+    final daysUntilNextPeriod = cycleInfo.cycleLength - cycleDay + 1;
 
     final nextPeriodDate = today.add(
       Duration(days: daysUntilNextPeriod),
@@ -108,6 +178,7 @@ class CycleCalculator {
     final ovulationDay = cycleLength - 14;
     final fertileStart = ovulationDay - 4;
     final fertileEnd = ovulationDay + 1;
+    final pmsStartDay = cycleLength - 6;
 
     if (cycleDay <= periodLength) {
       return CyclePhase.menstruation;
@@ -121,20 +192,18 @@ class CycleCalculator {
       return CyclePhase.fertile;
     }
 
+    if (cycleDay >= pmsStartDay) {
+      return CyclePhase.pms;
+    }
+
     return CyclePhase.rest;
   }
-
-  // ---------------------------------------------------------------------------
-  // New calculations based on actual period records
-  // ---------------------------------------------------------------------------
 
   static int calculatePredictedPeriodLength({
     required List<PeriodRecord> records,
     required int fallbackPeriodLength,
   }) {
-    final completedRecords = _getCompletedRecords(
-      records,
-    );
+    final completedRecords = _getCompletedRecords(records);
 
     if (completedRecords.isEmpty) {
       return fallbackPeriodLength;
@@ -160,8 +229,7 @@ class CycleCalculator {
   }) {
     final sortedRecords = [...records]
       ..sort(
-        (first, second) =>
-            first.startDate.compareTo(second.startDate),
+        (first, second) => first.startDate.compareTo(second.startDate),
       );
 
     if (sortedRecords.length < 2) {
@@ -170,11 +238,7 @@ class CycleCalculator {
 
     final cycleLengths = <int>[];
 
-    for (
-      var index = 1;
-      index < sortedRecords.length;
-      index++
-    ) {
+    for (var index = 1; index < sortedRecords.length; index++) {
       final previousRecord = sortedRecords[index - 1];
       final currentRecord = sortedRecords[index];
 
@@ -184,7 +248,6 @@ class CycleCalculator {
         _dateOnly(previousRecord.startDate),
       ).inDays;
 
-      // Ignore clearly invalid cycle intervals.
       if (difference >= 15 && difference <= 60) {
         cycleLengths.add(difference);
       }
@@ -194,72 +257,13 @@ class CycleCalculator {
       return fallbackCycleLength;
     }
 
-    final recentCycleLengths =
-        cycleLengths.length <= _historyLimit
-            ? cycleLengths
-            : cycleLengths.sublist(
-                cycleLengths.length - _historyLimit,
-              );
+    final recentCycleLengths = cycleLengths.length <= _historyLimit
+        ? cycleLengths
+        : cycleLengths.sublist(
+            cycleLengths.length - _historyLimit,
+          );
 
-    return _calculateMedian(
-      recentCycleLengths,
-    );
-  }
-
-  static DateTime? calculateNextPeriodStart({
-    required List<PeriodRecord> records,
-    required int fallbackCycleLength,
-  }) {
-    if (records.isEmpty) {
-      return null;
-    }
-
-    final sortedRecords = [...records]
-      ..sort(
-        (first, second) =>
-            first.startDate.compareTo(second.startDate),
-      );
-
-    final latestRecord = sortedRecords.last;
-
-    final predictedCycleLength =
-        calculatePredictedCycleLength(
-      records: sortedRecords,
-      fallbackCycleLength: fallbackCycleLength,
-    );
-
-    return _dateOnly(
-      latestRecord.startDate,
-    ).add(
-      Duration(days: predictedCycleLength),
-    );
-  }
-
-  static PeriodRecord? calculateNextPredictedRecord({
-    required List<PeriodRecord> records,
-    required int fallbackCycleLength,
-    required int fallbackPeriodLength,
-  }) {
-    final predictedStartDate =
-        calculateNextPeriodStart(
-      records: records,
-      fallbackCycleLength: fallbackCycleLength,
-    );
-
-    if (predictedStartDate == null) {
-      return null;
-    }
-
-    final predictedPeriodLength =
-        calculatePredictedPeriodLength(
-      records: records,
-      fallbackPeriodLength: fallbackPeriodLength,
-    );
-
-    return PeriodRecord(
-      startDate: predictedStartDate,
-      periodLength: predictedPeriodLength,
-    );
+    return _calculateMedian(recentCycleLengths);
   }
 
   static List<PeriodRecord> generatePredictedRecords({
@@ -274,98 +278,67 @@ class CycleCalculator {
     }
 
     final sortedRecords = [...records]
-      ..sort(
-        (first, second) =>
-            first.startDate.compareTo(second.startDate),
-      );
+      ..sort((a, b) => a.startDate.compareTo(b.startDate));
 
-    final predictedCycleLength =
-        calculatePredictedCycleLength(
+    final predictedCycleLength = calculatePredictedCycleLength(
       records: sortedRecords,
       fallbackCycleLength: fallbackCycleLength,
     );
 
-    final predictedPeriodLength =
-        calculatePredictedPeriodLength(
+    final predictedPeriodLength = calculatePredictedPeriodLength(
       records: sortedRecords,
       fallbackPeriodLength: fallbackPeriodLength,
     );
 
-    var predictedStartDate = _dateOnly(
-      sortedRecords.last.startDate,
-    ).add(
+    final predictedRecords = <PeriodRecord>[];
+    final normalizedRangeEnd = _dateOnly(rangeEnd);
+
+    for (int i = 0; i < sortedRecords.length - 1; i++) {
+      final currentRecord = sortedRecords[i];
+      final nextRecord = sortedRecords[i + 1];
+
+      var nextPredictedStart = _dateOnly(currentRecord.startDate).add(
+        Duration(days: predictedCycleLength),
+      );
+
+      while (nextPredictedStart.isBefore(_dateOnly(nextRecord.startDate))) {
+        final predictedEnd = nextPredictedStart.add(
+          Duration(days: predictedPeriodLength - 1),
+        );
+
+        if (predictedEnd.isBefore(_dateOnly(nextRecord.startDate))) {
+          predictedRecords.add(
+            PeriodRecord(
+              startDate: nextPredictedStart,
+              periodLength: predictedPeriodLength,
+            ),
+          );
+        }
+
+        nextPredictedStart = nextPredictedStart.add(
+          Duration(days: predictedCycleLength),
+        );
+      }
+    }
+
+    var futurePredictedStart = _dateOnly(sortedRecords.last.startDate).add(
       Duration(days: predictedCycleLength),
     );
 
-    final normalizedRangeStart = _dateOnly(
-      rangeStart,
-    );
-
-    final normalizedRangeEnd = _dateOnly(
-      rangeEnd,
-    );
-
-    while (predictedStartDate
-        .add(
-          Duration(
-            days: predictedPeriodLength - 1,
-          ),
-        )
-        .isBefore(normalizedRangeStart)) {
-      predictedStartDate = predictedStartDate.add(
-        Duration(days: predictedCycleLength),
-      );
-    }
-
-    final predictedRecords = <PeriodRecord>[];
-
-    while (!predictedStartDate.isAfter(
-      normalizedRangeEnd,
-    )) {
+    while (!futurePredictedStart.isAfter(normalizedRangeEnd)) {
       predictedRecords.add(
         PeriodRecord(
-          startDate: predictedStartDate,
+          startDate: futurePredictedStart,
           periodLength: predictedPeriodLength,
         ),
       );
 
-      predictedStartDate = predictedStartDate.add(
+      futurePredictedStart = futurePredictedStart.add(
         Duration(days: predictedCycleLength),
       );
     }
 
     return predictedRecords;
-  }
-
-  static bool isActualPeriodDay({
-    required DateTime date,
-    required List<PeriodRecord> records,
-  }) {
-    return records.any(
-      (record) => record.containsDate(date),
-    );
-  }
-
-  static PeriodRecord? findActualRecordForDate({
-    required DateTime date,
-    required List<PeriodRecord> records,
-  }) {
-    for (final record in records) {
-      if (record.containsDate(date)) {
-        return record;
-      }
-    }
-
-    return null;
-  }
-
-  static bool isPredictedPeriodDay({
-    required DateTime date,
-    required List<PeriodRecord> predictedRecords,
-  }) {
-    return predictedRecords.any(
-      (record) => record.containsDate(date),
-    );
   }
 
   static List<PeriodRecord> _getCompletedRecords(
@@ -379,8 +352,7 @@ class CycleCalculator {
       },
     ).toList()
       ..sort(
-        (first, second) =>
-            first.startDate.compareTo(second.startDate),
+        (first, second) => first.startDate.compareTo(second.startDate),
       );
 
     return completedRecords;
@@ -415,15 +387,10 @@ class CycleCalculator {
       return sortedValues[middleIndex];
     }
 
-    final firstMiddleValue =
-        sortedValues[middleIndex - 1];
+    final firstMiddleValue = sortedValues[middleIndex - 1];
+    final secondMiddleValue = sortedValues[middleIndex];
 
-    final secondMiddleValue =
-        sortedValues[middleIndex];
-
-    return (
-      (firstMiddleValue + secondMiddleValue) / 2
-    ).round();
+    return ((firstMiddleValue + secondMiddleValue) / 2).round();
   }
 
   static DateTime _dateOnly(

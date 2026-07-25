@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/cycle_info.dart';
 import '../models/period_record.dart';
 
+import 'cycle_calculator.dart'; // 
+
 class StorageService {
   static const _setupCompletedKey = 'setup_completed';
   static const _lastPeriodDateKey = 'last_period_date';
@@ -104,6 +106,7 @@ class StorageService {
   /// Tüm döngü bilgilerini eski model yapısında getir
   ///
   /// Mevcut ekranların çalışmaya devam etmesi için şimdilik korunuyor.
+  /// Tüm döngü bilgilerini hesaplayıp dinamik model yapısında getirir.
   static Future<CycleInfo?> getCycleInfo() async {
     final lastPeriodDate = await getLastPeriodDate();
 
@@ -112,15 +115,24 @@ class StorageService {
     }
 
     final periodRecords = await getPeriodRecords();
+    final fallbackPeriodLength = await getPeriodLength();
+    final fallbackCycleLength = await getCycleLength();
 
-    final latestPeriodLength = periodRecords.isNotEmpty
-        ? periodRecords.last.periodLength
-        : await getPeriodLength();
+    // Gerçek kayıtlar varsa CycleCalculator üzerinden dinamik ortalamaları alıyoruz.
+    final calculatedPeriodLength = CycleCalculator.calculatePredictedPeriodLength(
+      records: periodRecords,
+      fallbackPeriodLength: fallbackPeriodLength,
+    );
+
+    final calculatedCycleLength = CycleCalculator.calculatePredictedCycleLength(
+      records: periodRecords,
+      fallbackCycleLength: fallbackCycleLength,
+    );
 
     return CycleInfo(
       lastPeriodDate: lastPeriodDate,
-      periodLength: latestPeriodLength,
-      cycleLength: await getCycleLength(),
+      periodLength: calculatedPeriodLength,
+      cycleLength: calculatedCycleLength,
     );
   }
 
@@ -279,7 +291,10 @@ class StorageService {
       startDate: _normalizeDate(
         updatedRecord.startDate,
       ),
-      periodLength: updatedRecord.periodLength,
+      endDate: updatedRecord.endDate == null
+          ? null
+          : _normalizeDate(updatedRecord.endDate!),
+      predictedLength: updatedRecord.predictedLength,
     );
 
     await savePeriodRecords(records);
@@ -313,6 +328,27 @@ class StorageService {
 
     return true;
   }
+
+  /// Removes the currently ongoing period record.
+static Future<PeriodRecord> removeOngoingPeriod() async {
+  final records = await getPeriodRecords();
+
+  final ongoingIndex = records.indexWhere(
+    (record) => record.isOngoing,
+  );
+
+  if (ongoingIndex == -1) {
+    throw StateError(
+      'No ongoing period found.',
+    );
+  }
+
+  final removedRecord = records.removeAt(ongoingIndex);
+
+  await savePeriodRecords(records);
+
+  return removedRecord;
+}
 
 /// Starts a new period on the selected date.
 ///
@@ -377,6 +413,19 @@ class StorageService {
   }
 
   final ongoingRecord = records[ongoingIndex];
+
+  final periodDuration = normalizedEndDate
+          .difference(
+            _normalizeDate(ongoingRecord.startDate),
+          )
+          .inDays +
+      1;
+
+  if (periodDuration > 15) {
+    throw StateError(
+      'ONGOING_PERIOD_TOO_LONG',
+    );
+  }
 
   final finishedRecord = ongoingRecord.finish(
     normalizedEndDate,

@@ -96,92 +96,102 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFFAF8FC),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-          child: Column(
-            children: [
-              Expanded(
-                child: Center(
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 350),
-                    opacity: _isLeaving ? 0 : 1,
-                    child: AnimatedSlide(
-                      duration: const Duration(milliseconds: 350),
-                      curve: Curves.easeInOut,
-                      offset: _isLeaving
-                          ? const Offset(0, -0.12)
-                          : Offset.zero,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedBuilder(
-                            animation: _floatingAnimation,
-                            builder: (context, child) {
-                              return Transform.translate(
-                                offset: Offset(
-                                  0,
-                                  _floatingAnimation.value,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 10),
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 350),
+                        opacity: _isLeaving ? 0 : 1,
+                        child: AnimatedSlide(
+                          duration: const Duration(milliseconds: 350),
+                          curve: Curves.easeInOut,
+                          offset: _isLeaving
+                              ? const Offset(0, -0.12)
+                              : Offset.zero,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedBuilder(
+                                animation: _floatingAnimation,
+                                builder: (context, child) {
+                                  return Transform.translate(
+                                    offset: Offset(
+                                      0,
+                                      _floatingAnimation.value,
+                                    ),
+                                    child: child,
+                                  );
+                                },
+                                child: Image.asset(
+                                  'assets/images/luna_home.png',
+                                  height: 280, // Küçük ekranlar için boyutu biraz optimize ettik
+                                  fit: BoxFit.contain,
                                 ),
-                                child: child,
-                              );
-                            },
-                            child: Image.asset(
-                              'assets/images/luna_home.png',
-                              height: 330,
-                              fit: BoxFit.contain,
-                            ),
+                              ),
+                              const SizedBox(height: 20),
+                              const Text(
+                                'Luna',
+                                style: TextStyle(
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF6842A5),
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Döngünü tanı.\nGücünü keşfet.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  height: 1.3,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF2E2933),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 20),
-                          const Text(
-                            'Luna',
-                            style: TextStyle(
-                              fontSize: 42,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF6842A5),
-                              letterSpacing: -1,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Döngünü tanı.\nGücünü keşfet.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 22,
-                              height: 1.3,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF2E2933),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 30),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: FilledButton(
+                          onPressed: _openSetupScreen,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF6842A5),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Başlayalım',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: FilledButton(
-                  onPressed: _openSetupScreen,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF6842A5),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Başlayalım',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

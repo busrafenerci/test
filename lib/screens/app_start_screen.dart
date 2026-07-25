@@ -66,8 +66,7 @@ class _AppStartScreenState extends State<AppStartScreen> {
                 FilledButton(
                   onPressed: () {
                     setState(() {
-                      _setupCompletedFuture =
-                          StorageService.isSetupCompleted();
+                      _setupCompletedFuture = StorageService.isSetupCompleted();
                     });
                   },
                   child: const Text('Tekrar Dene'),
