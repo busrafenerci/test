@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/storage_service.dart';
-import 'home_screen.dart';
+import 'main_screen.dart';
 import 'welcome_screen.dart';
 
 class AppStartScreen extends StatefulWidget {
@@ -36,7 +36,7 @@ class _AppStartScreenState extends State<AppStartScreen> {
         final setupCompleted = snapshot.data ?? false;
 
         if (setupCompleted) {
-          return const HomeScreen();
+          return const MainScreen();
         }
 
         return const WelcomeScreen();

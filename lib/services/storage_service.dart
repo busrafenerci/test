@@ -513,6 +513,20 @@ static Future<PeriodRecord> removeOngoingPeriod() async {
     );
   }
 
+    /// Deletes all locally stored cycle and onboarding data.
+  static Future<void> clearAllData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await Future.wait([
+      prefs.remove(_setupCompletedKey),
+      prefs.remove(_lastPeriodDateKey),
+      prefs.remove(_periodLengthKey),
+      prefs.remove(_cycleLengthKey),
+      prefs.remove(_periodRecordsKey),
+      prefs.remove(_periodRecordsMigratedKey),
+    ]);
+  }
+
   static DateTime _normalizeDate(DateTime date) {
     return DateTime(
       date.year,

@@ -1,4 +1,4 @@
-import 'calendar_screen.dart';
+
 import 'package:flutter/material.dart';
 
 import '../models/cycle_info.dart';
@@ -7,8 +7,14 @@ import '../services/cycle_calculator.dart';
 import '../services/storage_service.dart';
 import '../widgets/cycle_ring.dart';
 
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final int refreshVersion;
+
+  const HomeScreen({
+    super.key,
+    this.refreshVersion = 0,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -22,6 +28,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadData();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.refreshVersion != oldWidget.refreshVersion) {
+      _reloadData();
+    }
   }
 
   @override
@@ -167,40 +182,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             title: 'Döngü bilgilerin',
             value: '${cycleInfo.cycleLength} günlük döngü',
             subtitle: 'Ortalama regl süresi: ${cycleInfo.periodLength} gün',
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: OutlinedButton(
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CalendarScreen(),
-                  ),
-                );
-                if (mounted) {
-                  _reloadData();
-                }
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF7657A8),
-                side: const BorderSide(
-                  color: Color(0xFF7657A8),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-              ),
-              child: const Text(
-                'Takvimi Görüntüle',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           ),
         ],
       ),

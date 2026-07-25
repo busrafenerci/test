@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/number_picker.dart';
-import 'home_screen.dart';
+import 'main_screen.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
@@ -14,7 +14,7 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   DateTime _lastPeriodDate = DateTime.now();
-  int _periodLength = 5;
+  int _periodLength = 4;
   int _cycleLength = 28;
 
   Future<void> _selectDate() async {
@@ -42,7 +42,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
   Navigator.of(context).pushAndRemoveUntil(
     MaterialPageRoute(
-      builder: (_) => const HomeScreen(),
+      builder: (_) => const MainScreen(),
     ),
     (route) => false,
   );
