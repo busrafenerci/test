@@ -29,3 +29,45 @@ Bu dosya, Luna projesinde yapılan önemli değişiklikleri, hata düzeltmelerin
 * Ana ekran ve takvim ekranı iskeleti oluşturuldu[cite: 4].
 * Mor renk paletiyle Luna tasarım dili belirlendi[cite: 4].
 * Yerel veri saklama altyapısı ve `CycleCalculator` entegrasyonu sağlandı[cite: 4].
+
+# Değişiklik Geçmişi
+
+## Takvim
+- Regl tahminlerinin takvim üzerinde gösterimi eklendi.
+- Döngü evrelerine göre gün renklendirmeleri geliştirildi.
+- Seçilen gün için evre adı ve detay kartı eklendi.
+- Takvim açıklamaları (legend) görsel olarak iyileştirildi.
+- Tahmin hesaplama mantığı geçmiş kayıtları dikkate alacak şekilde güncellendi.
+
+## Ana Navigasyon
+- Alt menü (Bottom Navigation) eklendi.
+- Ana Sayfa, Takvim ve Ayarlar ekranları arasında geçiş desteği sağlandı.
+- İlk kurulum sonrası doğrudan Ana Sayfa yerine ana navigasyon ekranına yönlendirme yapıldı.
+
+## Ayarlar
+- Ayarlar ekranı oluşturuldu.
+- Varsayılan döngü uzunluğu ayarlanabilir hale getirildi.
+- Varsayılan regl süresi ayarlanabilir hale getirildi.
+- Gizlilik Politikası bölümü eklendi.
+- "Tüm Verileri Sıfırla" özelliği eklendi.
+- Ayarlar ekranının tasarımı sadeleştirildi ve kullanıcı deneyimi iyileştirildi.
+
+## Veri Yönetimi
+- Tüm kullanıcı verilerini sıfırlama desteği eklendi.
+- Sıfırlama işleminde:
+  - Regl kayıtları silinir.
+  - Kullanıcı tercihleri temizlenir.
+  - İlk kurulum bilgileri sıfırlanır.
+- Sıfırlama sonrasında uygulama tekrar ilk kurulum ekranından başlar.
+
+## Tahmin Sistemi
+- Döngü uzunluğu tahmini son kayıtlar kullanılarak hesaplanacak şekilde geliştirildi.
+- Regl süresi tahmini tamamlanmış kayıtlar üzerinden hesaplanacak şekilde geliştirildi.
+- Yeterli geçmiş veri bulunmadığında kullanıcının belirlediği varsayılan değerler kullanılacak şekilde düzenlendi.
+- Tahminlerde son kayıtların medyan değeri kullanılarak daha stabil sonuçlar elde edilmesi sağlandı.
+
+## Arayüz İyileştirmeleri
+- Renk gösterimleri daha belirgin hale getirildi.
+- Hizalama ve boşluk düzenlemeleri yapıldı.
+- Seçili gün bilgi kartı geliştirildi.
+- Genel tasarım dili daha modern ve tutarlı hale getirildi.

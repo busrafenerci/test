@@ -16,6 +16,8 @@ class _SetupScreenState extends State<SetupScreen> {
   DateTime _lastPeriodDate = DateTime.now();
   int _periodLength = 4;
   int _cycleLength = 28;
+  bool _hasReadInformation = false;
+  bool _isSaving = false;
 
   Future<void> _selectDate() async {
     final pickedDate = await showDatePicker(
@@ -33,20 +35,44 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   Future<void> _completeSetup() async {
-  await StorageService.saveLastPeriodDate(_lastPeriodDate);
-  await StorageService.savePeriodLength(_periodLength);
-  await StorageService.saveCycleLength(_cycleLength);
-  await StorageService.setSetupCompleted(true);
+    if (!_hasReadInformation || _isSaving) {
+      return;
+    }
 
-  if (!mounted) return;
+    setState(() {
+      _isSaving = true;
+    });
 
-  Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute(
-      builder: (_) => const MainScreen(),
-    ),
-    (route) => false,
-  );
-}
+    try {
+      await StorageService.saveLastPeriodDate(_lastPeriodDate);
+      await StorageService.savePeriodLength(_periodLength);
+      await StorageService.saveCycleLength(_cycleLength);
+      await StorageService.setSetupCompleted(true);
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const MainScreen(),
+        ),
+        (route) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bilgiler kaydedilemedi. Lütfen tekrar dene.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
 
   String get formattedDate {
     const months = [
@@ -75,7 +101,7 @@ class _SetupScreenState extends State<SetupScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,14 +116,14 @@ class _SetupScreenState extends State<SetupScreen> {
                         Text(
                           'Bilgilerini Ekleyelim',
                           style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(fontSize: 27),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Bu bilgiler yalnızca tahmin yapmak için kullanılır.',
-                            style: Theme.of(context).textTheme.bodyMedium,
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(fontSize: 27),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Bu bilgiler kişisel döngü tahminleri oluşturmak için kullanılır.',
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
                     ),
@@ -111,26 +137,13 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                 ],
               ),
-
-              const SizedBox(height: 32),
-
-              Row(
-                children: [
-                  const Icon(
-                    Icons.calendar_today_rounded,
-                    size: 20,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Son Regl Başlangıcı',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ],
+              const SizedBox(height: 28),
+              _SectionTitle(
+                icon: Icons.calendar_today_rounded,
+                iconColor: AppColors.primary,
+                title: 'Son Regl Başlangıcı',
               ),
-
               const SizedBox(height: 12),
-
               InkWell(
                 onTap: _selectDate,
                 borderRadius: BorderRadius.circular(18),
@@ -143,9 +156,7 @@ class _SetupScreenState extends State<SetupScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: AppColors.border,
-                    ),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
                     children: [
@@ -163,26 +174,13 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                 ),
               ),
-
-              const SizedBox(height: 28),
-
-              Row(
-                children: [
-                  const Icon(
-                    Icons.water_drop_rounded,
-                    size: 20,
-                    color: AppColors.period,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Regl Süresi',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ],
+              const SizedBox(height: 24),
+              _SectionTitle(
+                icon: Icons.water_drop_rounded,
+                iconColor: AppColors.period,
+                title: 'Regl Süresi',
               ),
-
               const SizedBox(height: 12),
-
               NumberPicker(
                 value: _periodLength,
                 minValue: 1,
@@ -195,26 +193,13 @@ class _SetupScreenState extends State<SetupScreen> {
                   });
                 },
               ),
-
-              const SizedBox(height: 28),
-
-              Row(
-                children: [
-                  const Icon(
-                    Icons.autorenew_rounded,
-                    size: 20,
-                    color: AppColors.cycle,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Ortalama Döngü',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ],
+              const SizedBox(height: 24),
+              _SectionTitle(
+                icon: Icons.autorenew_rounded,
+                iconColor: AppColors.cycle,
+                title: 'Ortalama Döngü',
               ),
-
               const SizedBox(height: 12),
-
               NumberPicker(
                 value: _cycleLength,
                 minValue: 21,
@@ -227,20 +212,105 @@ class _SetupScreenState extends State<SetupScreen> {
                   });
                 },
               ),
-
-              const Spacer(),
-
+              const SizedBox(height: 24),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3EFFF),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFDCD2F7)),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Luna tarafından gösterilen regl, PMS, doğurgan dönem ve yumurtlama tarihleri tahminidir. Tıbbi tavsiye yerine geçmez ve gebelikten korunma yöntemi olarak kullanılmamalıdır.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.5,
+                          color: Color(0xFF5F5574),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                value: _hasReadInformation,
+                onChanged: (value) {
+                  setState(() {
+                    _hasReadInformation = value ?? false;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+                activeColor: AppColors.primary,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: const Text(
+                  'Bilgilendirmeyi okudum ve anladım.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
+                height: 54,
                 child: FilledButton(
-                  onPressed: _completeSetup,
-                  child: const Text('Başla'),
+                  onPressed: _hasReadInformation && !_isSaving
+                      ? _completeSetup
+                      : null,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Başla'),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+
+  const _SectionTitle({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: iconColor),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+      ],
     );
   }
 }

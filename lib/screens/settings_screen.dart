@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/app_settings.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
+import 'about_screen.dart';
 import 'app_start_screen.dart';
+import 'prediction_info_screen.dart';
 import 'privacy_policy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -68,7 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _selectCycleLength() async {
     final selectedValue = await _showNumberPicker(
-      title: 'Ortalama döngü uzunluğu',
+      title: 'Ortalama döngü aralığı',
       description:
           'Luna, bir sonraki regl tarihini tahmin ederken bu değeri kullanır.',
       currentValue: _settings.averageCycleLength,
@@ -437,6 +439,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _openPredictionInfo() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const PredictionInfoScreen(),
+      ),
+    );
+  }
+
+  void _openAbout() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const AboutScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -493,6 +511,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               '${_settings.predictedPeriodLength} gün',
                           icon: Icons.water_drop_outlined,
                           onTap: _selectPeriodLength,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    _SettingsSection(
+                      title: 'Bilgilendirme',
+                      children: [
+                        _SettingsTile(
+                          title: 'Tahminler Hakkında',
+                          subtitle:
+                              'Döngü tahminlerinin nasıl oluşturulduğunu öğren',
+                          icon: Icons.info_outline_rounded,
+                          onTap: _openPredictionInfo,
+                        ),
+                        const _SettingsDivider(),
+                        _SettingsTile(
+                          title: 'Hakkında',
+                          subtitle: 'Luna ve uygulama sürümü',
+                          icon: Icons.nightlight_round,
+                          onTap: _openAbout,
                         ),
                       ],
                     ),

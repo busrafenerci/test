@@ -56,7 +56,7 @@ class CycleResult {
 class CycleCalculator {
   CycleCalculator._();
 
-  static const int _historyLimit = 3;
+  static const int _historyLimit = 6;
 
   /// Verilen tarihin döngünün kaçıncı günü olduğunu hesaplar
   static int getCycleDay({

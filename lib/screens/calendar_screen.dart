@@ -49,10 +49,73 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return candidate;
   }
 
+  /// Returns cycle information for a calendar date.
+  ///
+  /// For dates before the first saved period, Luna creates one estimated
+  /// previous cycle so PMS, fertile and ovulation days can still be shown.
+  CycleInfo? _getCycleInfoForDate(DateTime date) {
+    final relevantRecord = _findLastRecordBefore(date);
+
+    if (relevantRecord != null) {
+      return CycleInfo(
+        lastPeriodDate: relevantRecord.startDate,
+        periodLength: relevantRecord.periodLength,
+        cycleLength: _fallbackCycleLength,
+      );
+    }
+
+    if (_actualRecords.isEmpty) {
+      return null;
+    }
+
+    final sortedRecords = [..._actualRecords]
+      ..sort((a, b) => a.startDate.compareTo(b.startDate));
+
+    final firstStartDate = _dateOnly(sortedRecords.first.startDate);
+    final targetDate = _dateOnly(date);
+
+    if (!targetDate.isBefore(firstStartDate)) {
+      return null;
+    }
+
+    final estimatedPreviousStartDate = firstStartDate.subtract(
+      Duration(days: _fallbackCycleLength),
+    );
+
+    // Only estimate the single cycle immediately before the first real record.
+    if (targetDate.isBefore(estimatedPreviousStartDate)) {
+      return null;
+    }
+
+    return CycleInfo(
+      lastPeriodDate: estimatedPreviousStartDate,
+      periodLength: _fallbackPeriodLength,
+      cycleLength: _fallbackCycleLength,
+    );
+  }
+
+  bool _isEstimatedDateBeforeFirstRecord(DateTime date) {
+    if (_actualRecords.isEmpty) {
+      return false;
+    }
+
+    final firstStartDate = _actualRecords
+        .map((record) => _dateOnly(record.startDate))
+        .reduce((first, second) => first.isBefore(second) ? first : second);
+
+    final targetDate = _dateOnly(date);
+    final estimatedPreviousStartDate = firstStartDate.subtract(
+      Duration(days: _fallbackCycleLength),
+    );
+
+    return targetDate.isBefore(firstStartDate) &&
+        !targetDate.isBefore(estimatedPreviousStartDate);
+  }
+
   List<PeriodRecord> _actualRecords = [];
   List<PeriodRecord> _predictedRecords = [];
 
-  int _fallbackPeriodLength = 5;
+  int _fallbackPeriodLength = 4;
   int _fallbackCycleLength = 28;
 
   bool _isLoading = true;
@@ -238,7 +301,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Gerçek ve tahmini regl günlerini takip et.',
+            'Regl ve döngü tahminlerini takip et.',
             style: TextStyle(
               fontSize: 14,
               color: Color(0xFF77707E),
@@ -436,27 +499,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
     bool isPmsDay = false;
 
     if (!isActualPeriodDay && !isPredictedPeriodDay) {
-      final relevantRecord = _findLastRecordBefore(date);
+      final cycleInfo = _getCycleInfoForDate(date);
 
-      if (relevantRecord != null) {
-        final pastCycleInfo = CycleInfo(
-          lastPeriodDate: relevantRecord.startDate,
-          periodLength: relevantRecord.periodLength,
-          cycleLength: _fallbackCycleLength,
-        );
-
+      if (cycleInfo != null) {
         isFertileDay = CycleCalculator.isFertileDay(
           date: date,
-          cycleInfo: pastCycleInfo,
+          cycleInfo: cycleInfo,
         );
 
         isOvulationDay = CycleCalculator.isOvulationDay(
           date: date,
-          cycleInfo: pastCycleInfo,
+          cycleInfo: cycleInfo,
         );
 
         final cycleResult = CycleCalculator.calculate(
-          pastCycleInfo,
+          cycleInfo,
           currentDate: date,
         );
 
@@ -585,31 +642,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
         size: 28,
       );
     } else {
-      final relevantRecord = _findLastRecordBefore(_selectedDate);
+      final cycleInfo = _getCycleInfoForDate(_selectedDate);
 
-      if (relevantRecord != null) {
-        final pastCycleInfo = CycleInfo(
-          lastPeriodDate: relevantRecord.startDate,
-          periodLength: relevantRecord.periodLength,
-          cycleLength: _fallbackCycleLength,
-        );
-
+      if (cycleInfo != null) {
         final isOvulation = CycleCalculator.isOvulationDay(
           date: _selectedDate,
-          cycleInfo: pastCycleInfo,
+          cycleInfo: cycleInfo,
         );
 
         final cycleResult = CycleCalculator.calculate(
-          pastCycleInfo,
+          cycleInfo,
           currentDate: _selectedDate,
         );
 
+        const estimatedPrefix = 'Tahmini ';
+
         if (isOvulation) {
-          statusText = '${cycleResult.cycleDay}. gün · Yumurtlama';
+          statusText =
+              '${cycleResult.cycleDay}. gün · ${estimatedPrefix}yumurtlama günü';
           phaseLeadingWidget = const Text('👑', style: TextStyle(fontSize: 24));
         } else {
           statusText =
-              '${cycleResult.cycleDay}. gün · ${cycleResult.phaseName}';
+              '${cycleResult.cycleDay}. gün · ${_estimatedPhaseName(cycleResult.phaseName)}';
           phaseLeadingWidget = Text(
             cycleResult.phaseIcon,
             style: const TextStyle(fontSize: 24),
@@ -731,19 +785,62 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ],
                   )
                 : isActualPeriodDay
-                    ? SizedBox(
-                        height: 40,
-                        child: OutlinedButton.icon(
-                          onPressed: _isSaving
-                              ? null
-                              : () => _confirmRemoveRecord(actualRecord),
-                          icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                          label: const Text('Regl kaydını kaldır', style: TextStyle(fontSize: 13)),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFC74469),
-                            side: const BorderSide(color: Color(0xFFE4A2B5)),
+                    ? Column(
+                        children: [
+                          if (!_isSameDay(
+                            _selectedDate,
+                            actualRecord.effectiveEndDate,
+                          )) ...[
+                            SizedBox(
+                              width: double.infinity,
+                              height: 40,
+                              child: FilledButton.icon(
+                                onPressed: _isSaving
+                                    ? null
+                                    : () => _confirmUpdatePeriodEnd(
+                                          actualRecord,
+                                          _selectedDate,
+                                        ),
+                                icon: const Icon(
+                                  Icons.check_circle_outline_rounded,
+                                  size: 18,
+                                ),
+                                label: const Text(
+                                  'Son regl günüm',
+                                  style: TextStyle(fontSize: 13),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF7657A8),
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          SizedBox(
+                            width: double.infinity,
+                            height: 40,
+                            child: OutlinedButton.icon(
+                              onPressed: _isSaving
+                                  ? null
+                                  : () => _confirmRemoveRecord(actualRecord),
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                size: 18,
+                              ),
+                              label: const Text(
+                                'Regl kaydını kaldır',
+                                style: TextStyle(fontSize: 13),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFC74469),
+                                side: const BorderSide(
+                                  color: Color(0xFFE4A2B5),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       )
                     : SizedBox(
                         height: 40,
@@ -960,6 +1057,117 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
   }
 
+  Future<void> _confirmUpdatePeriodEnd(
+    PeriodRecord record,
+    DateTime selectedDate,
+  ) async {
+    final shouldUpdate = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Regl bitiş tarihi güncellensin mi?'),
+          content: Text(
+            'Yeni bitiş tarihi:\n${_formatDate(selectedDate)}',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7657A8),
+              ),
+              child: const Text('Güncelle'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldUpdate != true) {
+      return;
+    }
+
+    await _updatePeriodEnd(record, selectedDate);
+  }
+
+  Future<void> _updatePeriodEnd(
+    PeriodRecord record,
+    DateTime selectedDate,
+  ) async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final normalizedSelectedDate = _dateOnly(selectedDate);
+      final normalizedStartDate = _dateOnly(record.startDate);
+      final newPeriodLength =
+          normalizedSelectedDate.difference(normalizedStartDate).inDays + 1;
+
+      if (newPeriodLength < 1 || newPeriodLength > 15) {
+        throw StateError('INVALID_PERIOD_LENGTH');
+      }
+
+      final updatedRecord = record.copyWith(
+        endDate: normalizedSelectedDate,
+      );
+
+      final updated = await StorageService.updatePeriodRecord(
+        oldStartDate: record.startDate,
+        updatedRecord: updatedRecord,
+      );
+
+      if (!updated) {
+        throw StateError('Record not found.');
+      }
+
+      await _loadCalendarData(showLoading: false);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Regl bitiş tarihi ${_formatDate(normalizedSelectedDate)} olarak güncellendi.',
+          ),
+        ),
+      );
+    } on StateError catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = error.message == 'INVALID_PERIOD_LENGTH'
+          ? 'Regl süresi 1 ile 15 gün arasında olmalıdır.'
+          : 'Regl bitiş tarihi güncellenemedi.';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Regl bitiş tarihi güncellenemedi.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
   Future<void> _confirmRemoveRecord(PeriodRecord record) async {
     final shouldRemove = await showDialog<bool>(
       context: context,
@@ -1048,19 +1256,47 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Expanded(
               child: _LegendItem(
                 color: Color(0xFFE6B800),
-                label: 'Doğurgan dönem',
+                label: 'Tahmini doğurgan dönem',
               ),
             ),
             Expanded(
               child: _LegendItem(
                 color: Color(0xFF8E24AA),
-                label: 'PMS dönemi',
+                label: 'Tahmini PMS dönemi',
               ),
             ),
           ],
         ),
+        SizedBox(height: 10),
+        Text(
+          'Döngü, PMS, doğurgan dönem ve yumurtlama bilgileri yaklaşık tahminlerdir; tıbbi tavsiye veya doğum kontrol yöntemi değildir.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 10.5,
+            height: 1.35,
+            color: Color(0xFF8A8294),
+          ),
+        ),
       ],
     );
+  }
+
+  String _estimatedPhaseName(String phaseName) {
+    final normalized = phaseName.toLowerCase();
+
+    if (normalized.contains('pms')) {
+      return 'Tahmini PMS dönemi';
+    }
+
+    if (normalized.contains('doğurgan') || normalized.contains('fertil')) {
+      return 'Tahmini doğurgan dönem';
+    }
+
+    if (normalized.contains('yumurtlama') || normalized.contains('ovülasyon')) {
+      return 'Tahmini yumurtlama günü';
+    }
+
+    return 'Tahmini $phaseName';
   }
 
   void _showPreviousMonth() {
