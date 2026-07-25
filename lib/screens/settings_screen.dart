@@ -478,7 +478,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 18),
                     _SettingsSection(
                       title: 'Döngü',
-                      icon: Icons.autorenew_rounded,
                       children: [
                         _SettingsTile(
                           title: 'Ortalama döngü uzunluğu',
@@ -500,7 +499,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 14),
                     _SettingsSection(
                       title: 'Gizlilik',
-                      icon: Icons.lock_outline_rounded,
                       children: [
                         _SettingsTile(
                           title: 'Gizlilik Politikası',
@@ -514,7 +512,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 14),
                     _SettingsSection(
                       title: 'Veriler',
-                      icon: Icons.storage_outlined,
                       children: [
                         _SettingsTile(
                           title: 'Tüm Verileri Sıfırla',
@@ -540,89 +537,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 class _SettingsSection extends StatelessWidget {
   final String title;
-  final IconData icon;
   final List<Widget> children;
 
   const _SettingsSection({
     required this.title,
-    required this.icon,
     required this.children,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: _SettingsScreenState._borderColor,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            left: 4,
+            bottom: 8,
+          ),
+          child: Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+              color: Color(0xFF8D859E),
+            ),
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.035,
-            ),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              14,
-              16,
-              10,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: _SettingsScreenState._primaryPurple
-                        .withValues(
-                      alpha: 0.10,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color:
-                        _SettingsScreenState._primaryPurple,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color:
-                        _SettingsScreenState._darkPurple,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 16,
-            ),
-            child: Divider(
-              height: 1,
-              thickness: 1,
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
               color: _SettingsScreenState._borderColor,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: 0.035,
+                ),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          ...children,
-          const SizedBox(height: 4),
-        ],
-      ),
+          child: Column(
+            children: children,
+          ),
+        ),
+      ],
     );
   }
 }
