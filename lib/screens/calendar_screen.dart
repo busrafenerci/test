@@ -286,7 +286,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       );
     }
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,17 +308,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Expanded(
-            child: Column(
-              children: [
-                _buildCalendarCard(),
-                const SizedBox(height: 12),
-                _buildSelectedDayCard(),
-                const SizedBox(height: 12),
-                _buildLegend(),
-              ],
-            ),
-          ),
+          _buildCalendarCard(),
+          const SizedBox(height: 12),
+          _buildSelectedDayCard(),
+          const SizedBox(height: 12),
+          _buildLegend(),
         ],
       ),
     );
@@ -431,9 +425,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
 
     final leadingEmptyCells = firstDayOfMonth.weekday - 1;
-    final totalCells = leadingEmptyCells + daysInMonth;
-    final rowCount = (totalCells / 7).ceil();
-    final itemCount = rowCount * 7;
+    // Always reserve 6 calendar rows (42 cells).
+    // This keeps the calendar card height fixed while changing months.
+    const itemCount = 42;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -441,9 +435,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       itemCount: itemCount,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        mainAxisSpacing: 4,
+        mainAxisSpacing: 2,
         crossAxisSpacing: 4,
-        childAspectRatio: 1.25,
+        childAspectRatio: 1.55,
       ),
       itemBuilder: (context, index) {
         final dayNumber = index - leadingEmptyCells + 1;
