@@ -1,7 +1,6 @@
 import 'dart:math' as math;
-
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-
 import 'setup_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -13,69 +12,36 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _handRotation;
-  late final Animation<double> _handLift;
-  late final Animation<double> _worldBounce;
-  late final Animation<double> _glowPulse;
+  late final AnimationController _sparkleController;
 
   bool _isLeaving = false;
+  bool _isButtonPressed = false;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
+    // Only the background sparkles are animated.
+    _sparkleController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-
-    // Only the hand/forearm layer moves.
-    _handRotation = const AlwaysStoppedAnimation<double>(0);
-
-    _handLift = Tween<double>(
-      begin: 1,
-      end: -2,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOutSine,
-      ),
-    );
-
-    // The world starts closer to the hand and rises gently.
-    _worldBounce = Tween<double>(
-      begin: 0,
-      end: -4,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOutSine,
-      ),
-    );
-
-    _glowPulse = Tween<double>(
-      begin: 0.82,
-      end: 1,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+      duration: const Duration(milliseconds: 3400),
+    )..repeat();
   }
 
   Future<void> _openSetupScreen() async {
     if (_isLeaving) {
       return;
     }
+    await HapticFeedback.lightImpact();
+
 
     setState(() {
       _isLeaving = true;
+      _isButtonPressed = false;
     });
 
     await Future<void>.delayed(
-      const Duration(milliseconds: 300),
+      const Duration(milliseconds: 250),
     );
 
     if (!mounted) {
@@ -120,7 +86,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _sparkleController.dispose();
     super.dispose();
   }
 
@@ -130,355 +96,804 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
-            center: Alignment(0.10, -0.35),
-            radius: 1.18,
+            center: Alignment(0, -0.40),
+            radius: 1.22,
             colors: [
-              Color(0xFFE8D9FF),
-              Color(0xFFF3EAFF),
-              Color(0xFFFFFBFF),
+              Color(0xFFE4D3FF),
+              Color(0xFFF0E5FF),
+              Color(0xFFFFFAFF),
             ],
-            stops: [0, 0.48, 1],
+            stops: [0, 0.53, 1],
           ),
         ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final characterSize =
-                  (constraints.maxWidth * 0.94).clamp(300.0, 410.0);
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _sparkleController,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      painter: WelcomeSparklesPainter(
+                        progress: _sparkleController.value,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isShortScreen =
+                      constraints.maxHeight < 750;
 
-              return SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
-                  child: Padding(
+                  final imageAreaHeight = isShortScreen
+                      ? constraints.maxHeight * 0.49
+                      : constraints.maxHeight * 0.53;
+
+                  return Padding(
                     padding: const EdgeInsets.fromLTRB(
-                      24,
-                      12,
-                      24,
-                      24,
+                      20,
+                      6,
+                      20,
+                      22,
                     ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Expanded(
+                          child: AnimatedOpacity(
+                            opacity: _isLeaving ? 0 : 1,
+                            duration: const Duration(milliseconds: 250),
+                            child: _buildLunaArea(
+                              height: imageAreaHeight,
+                            ),
+                          ),
+                        ),
                         AnimatedOpacity(
                           opacity: _isLeaving ? 0 : 1,
-                          duration:
-                              const Duration(milliseconds: 300),
-                          child: LunaCharacter(
-                            size: characterSize,
-                            animation: _controller,
-                            handRotation: _handRotation,
-                            handLift: _handLift,
-                            worldBounce: _worldBounce,
-                            glowPulse: _glowPulse,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Luna',
-                          style: TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF6842A5),
-                            letterSpacing: -1,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Döngünü tanı.\nGücünü keşfet.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 22,
-                            height: 1.3,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF2E2933),
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: FilledButton(
-                            onPressed:
-                                _isLeaving ? null : _openSetupScreen,
-                            style: FilledButton.styleFrom(
-                              backgroundColor:
-                                  const Color(0xFF6842A5),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(18),
-                              ),
+                          duration: const Duration(milliseconds: 250),
+                          child: const Text(
+                            'Luna',
+                            style: TextStyle(
+                              fontSize: 46,
+                              height: 1,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF6842A5),
+                              letterSpacing: -1.4,
                             ),
-                            child: const Text(
-                              'Başlayalım',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        AnimatedOpacity(
+                          opacity: _isLeaving ? 0 : 1,
+                          duration: const Duration(milliseconds: 250),
+                          child: const Text(
+                            'Döngünü tanı.\nGücünü keşfet.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 20,
+                              height: 1.42,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF514A59),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        AnimatedOpacity(
+                          opacity: _isLeaving ? 0.92 : 1,
+                          duration: const Duration(milliseconds: 180),
+                          child: Listener(
+                            onPointerDown: (_) {
+                              if (_isLeaving) return;
+                              setState(() {
+                                _isButtonPressed = true;
+                              });
+                            },
+                            onPointerUp: (_) {
+                              if (!_isButtonPressed) return;
+                              setState(() {
+                                _isButtonPressed = false;
+                              });
+                            },
+                            onPointerCancel: (_) {
+                              if (!_isButtonPressed) return;
+                              setState(() {
+                                _isButtonPressed = false;
+                              });
+                            },
+                            child: AnimatedScale(
+                              scale: _isButtonPressed
+                                  ? 0.965
+                                  : _isLeaving
+                                      ? 0.98
+                                      : 1,
+                              duration: const Duration(milliseconds: 100),
+                              curve: Curves.easeOutCubic,
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                width: double.infinity,
+                                height: 58,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _isButtonPressed || _isLeaving
+                                          ? const Color(0x356842A5)
+                                          : const Color(0x596842A5),
+                                      blurRadius:
+                                          _isButtonPressed || _isLeaving ? 10 : 20,
+                                      spreadRadius: _isButtonPressed ? 0 : 1,
+                                      offset: Offset(
+                                        0,
+                                        _isButtonPressed ? 4 : 8,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                child: FilledButton(
+                                  onPressed: _isLeaving
+                                      ? null
+                                      : _openSetupScreen,
+                                  style: ButtonStyle(
+                                    elevation:
+                                        const WidgetStatePropertyAll(0),
+                                    shadowColor:
+                                        const WidgetStatePropertyAll(
+                                      Colors.transparent,
+                                    ),
+                                    foregroundColor:
+                                        const WidgetStatePropertyAll(
+                                      Colors.white,
+                                    ),
+                                    backgroundColor:
+                                        WidgetStateProperty.resolveWith<Color>(
+                                      (states) {
+                                        if (_isLeaving) {
+                                          return const Color(0xFF57358D);
+                                        }
+
+                                        if (states.contains(
+                                          WidgetState.pressed,
+                                        )) {
+                                          return const Color(0xFF59388F);
+                                        }
+
+                                        return const Color(0xFF6842A5);
+                                      },
+                                    ),
+                                    overlayColor:
+                                        WidgetStateProperty.resolveWith<Color?>(
+                                      (states) {
+                                        if (states.contains(
+                                          WidgetState.pressed,
+                                        )) {
+                                          return Colors.white.withValues(
+                                            alpha: 0.10,
+                                          );
+                                        }
+
+                                        return null;
+                                      },
+                                    ),
+                                    shape: WidgetStatePropertyAll(
+                                      RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    ),
+                                  ),
+                                  child: AnimatedSwitcher(
+                                    duration:
+                                        const Duration(milliseconds: 160),
+                                    switchInCurve: Curves.easeOut,
+                                    switchOutCurve: Curves.easeIn,
+                                    child: _isLeaving
+                                        ? const Row(
+                                            key: ValueKey('loading'),
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  strokeWidth: 2.2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                          Color>(
+                                                    Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                              SizedBox(width: 10),
+                                              Text(
+                                                'Devam ediliyor...',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : const Text(
+                                            'Başlayalım',
+                                            key: ValueKey('buttonText'),
+                                            style: TextStyle(
+                                              fontSize: 17,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-              );
-            },
-          ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class LunaCharacter extends StatelessWidget {
-  final double size;
-  final Animation<double> animation;
-  final Animation<double> handRotation;
-  final Animation<double> handLift;
-  final Animation<double> worldBounce;
-  final Animation<double> glowPulse;
-
-  const LunaCharacter({
-    super.key,
-    required this.size,
-    required this.animation,
-    required this.handRotation,
-    required this.handLift,
-    required this.worldBounce,
-    required this.glowPulse,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildLunaArea({
+    required double height,
+  }) {
     return SizedBox(
-      width: size,
-      height: size,
+      width: double.infinity,
+      height: height,
       child: Stack(
+        alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          _fullCanvasAsset(
-            'assets/images/luna_legs.png',
-          ),
-          _fullCanvasAsset(
-            'assets/images/luna_body.png',
-          ),
-
-          // Only the skin hand/forearm layer is animated.
-          AnimatedBuilder(
-            animation: animation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, handLift.value),
-                child: Transform.rotate(
-                  angle: handRotation.value,
-                  alignment: const FractionalOffset(
-                    0.44,
-                    0.47,
-                  ),
-                  child: child,
+          // Large soft purple aura behind Luna.
+          Positioned(
+            top: height * 0.04,
+            child: Container(
+              width: height * 0.92,
+              height: height * 0.92,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0x596E45C2),
+                    Color(0x356E45C2),
+                    Color(0x1C9B72D3),
+                    Colors.transparent,
+                  ],
+                  stops: [0, 0.36, 0.67, 1],
                 ),
-              );
-            },
-            child: _fullCanvasAsset(
-              'assets/images/luna_right_arm.png',
+              ),
             ),
           ),
 
-          _fullCanvasAsset(
-            'assets/images/luna_head.png',
+          // Secondary glow around the center of the character.
+          Positioned(
+            top: height * 0.15,
+            child: Container(
+              width: height * 0.60,
+              height: height * 0.60,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x486842A5),
+                    blurRadius: 90,
+                    spreadRadius: 22,
+                  ),
+                ],
+              ),
+            ),
           ),
 
-          AnimatedBuilder(
-            animation: animation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(
-                  0,
-                  worldBounce.value,
+          // Luna remains completely still.
+          Positioned.fill(
+            child: ClipRect(
+              child: Transform.scale(
+                scale: 1.48,
+                alignment: const Alignment(0, 0.08),
+                child: Image.asset(
+                  'assets/images/luna_default.png',
+                  fit: BoxFit.contain,
+                  alignment: const Alignment(0, 0.08),
+                  filterQuality: FilterQuality.high,
+                  gaplessPlayback: true,
+                  errorBuilder: (
+                    context,
+                    error,
+                    stackTrace,
+                  ) {
+                    return const Center(
+                      child: Text(
+                        'Luna görseli bulunamadı',
+                        style: TextStyle(
+                          color: Color(0xFF6842A5),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                child: child,
-              );
-            },
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: WorldGlowPainter(
-                      progress: animation.value,
-                      pulse: glowPulse.value,
-                    ),
-                  ),
-                ),
-                _fullCanvasAsset(
-                  'assets/images/luna_world.png',
-                ),
-              ],
+              ),
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _fullCanvasAsset(String path) {
-    return Positioned.fill(
-      child: Image.asset(
-        path,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
-        gaplessPlayback: true,
-      ),
-    );
-  }
 }
 
-class WorldGlowPainter extends CustomPainter {
+class WelcomeSparklesPainter extends CustomPainter {
   final double progress;
-  final double pulse;
 
-  const WorldGlowPainter({
+  const WelcomeSparklesPainter({
     required this.progress,
-    required this.pulse,
   });
 
-  static const List<Offset> _sparklePositions = [
-    Offset(-1.12, -0.48),
-    Offset(-0.72, -1.02),
-    Offset(0.02, -1.18),
-    Offset(0.76, -0.94),
-    Offset(1.16, -0.36),
-    Offset(1.08, 0.42),
-    Offset(0.52, 0.96),
-    Offset(-0.34, 1.10),
-    Offset(-1.02, 0.62),
+  static const List<_SparkleData> _sparkles = [
+    // Top area
+    _SparkleData(
+      position: Offset(0.07, 0.07),
+      radius: 2.2,
+      phase: 0.2,
+      speed: 0.85,
+    ),
+    _SparkleData(
+      position: Offset(0.16, 0.11),
+      radius: 7.5,
+      phase: 1.0,
+      speed: 1.10,
+    ),
+    _SparkleData(
+      position: Offset(0.26, 0.06),
+      radius: 2.4,
+      phase: 2.2,
+      speed: 0.75,
+    ),
+    _SparkleData(
+      position: Offset(0.38, 0.12),
+      radius: 4.5,
+      phase: 3.1,
+      speed: 1.20,
+    ),
+    _SparkleData(
+      position: Offset(0.50, 0.07),
+      radius: 2.0,
+      phase: 4.0,
+      speed: 0.90,
+    ),
+    _SparkleData(
+      position: Offset(0.62, 0.11),
+      radius: 5.5,
+      phase: 5.0,
+      speed: 1.15,
+    ),
+    _SparkleData(
+      position: Offset(0.75, 0.07),
+      radius: 2.5,
+      phase: 5.8,
+      speed: 0.82,
+    ),
+    _SparkleData(
+      position: Offset(0.84, 0.12),
+      radius: 9.0,
+      phase: 1.7,
+      speed: 1.05,
+    ),
+    _SparkleData(
+      position: Offset(0.94, 0.08),
+      radius: 2.0,
+      phase: 2.8,
+      speed: 0.72,
+    ),
+
+    // Around the globe
+    _SparkleData(
+      position: Offset(0.06, 0.18),
+      radius: 4.0,
+      phase: 0.7,
+      speed: 1.25,
+    ),
+    _SparkleData(
+      position: Offset(0.14, 0.22),
+      radius: 8.0,
+      phase: 1.9,
+      speed: 0.95,
+    ),
+    _SparkleData(
+      position: Offset(0.23, 0.18),
+      radius: 2.2,
+      phase: 3.4,
+      speed: 1.30,
+    ),
+    _SparkleData(
+      position: Offset(0.31, 0.24),
+      radius: 5.0,
+      phase: 4.2,
+      speed: 0.80,
+    ),
+    _SparkleData(
+      position: Offset(0.42, 0.19),
+      radius: 2.5,
+      phase: 5.5,
+      speed: 1.10,
+    ),
+    _SparkleData(
+      position: Offset(0.53, 0.23),
+      radius: 3.2,
+      phase: 0.4,
+      speed: 0.76,
+    ),
+    _SparkleData(
+      position: Offset(0.66, 0.18),
+      radius: 6.5,
+      phase: 1.5,
+      speed: 1.22,
+    ),
+    _SparkleData(
+      position: Offset(0.76, 0.24),
+      radius: 2.1,
+      phase: 2.6,
+      speed: 0.88,
+    ),
+    _SparkleData(
+      position: Offset(0.87, 0.20),
+      radius: 5.5,
+      phase: 3.8,
+      speed: 1.18,
+    ),
+    _SparkleData(
+      position: Offset(0.95, 0.26),
+      radius: 2.3,
+      phase: 5.1,
+      speed: 0.78,
+    ),
+
+    // Around Luna's upper body and hair
+    _SparkleData(
+      position: Offset(0.07, 0.31),
+      radius: 2.5,
+      phase: 0.9,
+      speed: 0.80,
+    ),
+    _SparkleData(
+      position: Offset(0.16, 0.35),
+      radius: 5.5,
+      phase: 2.0,
+      speed: 1.26,
+    ),
+    _SparkleData(
+      position: Offset(0.27, 0.30),
+      radius: 2.0,
+      phase: 3.0,
+      speed: 0.72,
+    ),
+    _SparkleData(
+      position: Offset(0.37, 0.37),
+      radius: 3.5,
+      phase: 4.1,
+      speed: 1.14,
+    ),
+    _SparkleData(
+      position: Offset(0.48, 0.31),
+      radius: 2.2,
+      phase: 5.2,
+      speed: 0.84,
+    ),
+    _SparkleData(
+      position: Offset(0.59, 0.36),
+      radius: 4.5,
+      phase: 0.5,
+      speed: 1.28,
+    ),
+    _SparkleData(
+      position: Offset(0.70, 0.30),
+      radius: 2.0,
+      phase: 1.6,
+      speed: 0.74,
+    ),
+    _SparkleData(
+      position: Offset(0.80, 0.35),
+      radius: 8.5,
+      phase: 2.7,
+      speed: 1.05,
+    ),
+    _SparkleData(
+      position: Offset(0.92, 0.31),
+      radius: 3.0,
+      phase: 3.9,
+      speed: 0.92,
+    ),
+
+    // Middle area
+    _SparkleData(
+      position: Offset(0.08, 0.44),
+      radius: 5.0,
+      phase: 0.3,
+      speed: 1.20,
+    ),
+    _SparkleData(
+      position: Offset(0.19, 0.47),
+      radius: 2.2,
+      phase: 1.4,
+      speed: 0.75,
+    ),
+    _SparkleData(
+      position: Offset(0.30, 0.42),
+      radius: 6.5,
+      phase: 2.5,
+      speed: 1.12,
+    ),
+    _SparkleData(
+      position: Offset(0.41, 0.49),
+      radius: 2.0,
+      phase: 3.6,
+      speed: 0.82,
+    ),
+    _SparkleData(
+      position: Offset(0.53, 0.43),
+      radius: 3.0,
+      phase: 4.7,
+      speed: 1.30,
+    ),
+    _SparkleData(
+      position: Offset(0.64, 0.48),
+      radius: 2.4,
+      phase: 5.8,
+      speed: 0.70,
+    ),
+    _SparkleData(
+      position: Offset(0.76, 0.43),
+      radius: 5.5,
+      phase: 0.8,
+      speed: 1.18,
+    ),
+    _SparkleData(
+      position: Offset(0.87, 0.49),
+      radius: 2.2,
+      phase: 1.9,
+      speed: 0.86,
+    ),
+    _SparkleData(
+      position: Offset(0.95, 0.42),
+      radius: 7.5,
+      phase: 3.0,
+      speed: 1.08,
+    ),
+
+    // Lower part of the character
+    _SparkleData(
+      position: Offset(0.07, 0.57),
+      radius: 2.3,
+      phase: 0.6,
+      speed: 0.76,
+    ),
+    _SparkleData(
+      position: Offset(0.16, 0.62),
+      radius: 6.5,
+      phase: 1.7,
+      speed: 1.20,
+    ),
+    _SparkleData(
+      position: Offset(0.28, 0.56),
+      radius: 2.0,
+      phase: 2.8,
+      speed: 0.84,
+    ),
+    _SparkleData(
+      position: Offset(0.39, 0.63),
+      radius: 4.0,
+      phase: 3.9,
+      speed: 1.15,
+    ),
+    _SparkleData(
+      position: Offset(0.51, 0.58),
+      radius: 2.4,
+      phase: 5.0,
+      speed: 0.72,
+    ),
+    _SparkleData(
+      position: Offset(0.62, 0.63),
+      radius: 3.0,
+      phase: 6.0,
+      speed: 1.25,
+    ),
+    _SparkleData(
+      position: Offset(0.73, 0.57),
+      radius: 2.0,
+      phase: 0.9,
+      speed: 0.80,
+    ),
+    _SparkleData(
+      position: Offset(0.84, 0.62),
+      radius: 7.0,
+      phase: 2.0,
+      speed: 1.10,
+    ),
+    _SparkleData(
+      position: Offset(0.94, 0.56),
+      radius: 2.5,
+      phase: 3.1,
+      speed: 0.88,
+    ),
+
+    // Sparse lower background
+    _SparkleData(
+      position: Offset(0.10, 0.71),
+      radius: 3.0,
+      phase: 0.4,
+      speed: 1.15,
+    ),
+    _SparkleData(
+      position: Offset(0.25, 0.75),
+      radius: 2.0,
+      phase: 1.8,
+      speed: 0.72,
+    ),
+    _SparkleData(
+      position: Offset(0.76, 0.74),
+      radius: 4.5,
+      phase: 3.2,
+      speed: 1.18,
+    ),
+    _SparkleData(
+      position: Offset(0.91, 0.70),
+      radius: 2.2,
+      phase: 4.6,
+      speed: 0.80,
+    ),
   ];
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(
-      size.width * 0.325,
-      size.height * 0.385,
-    );
+    for (final sparkle in _sparkles) {
+      final angle =
+          progress *
+              2 *
+              math.pi *
+              sparkle.speed +
+          sparkle.phase;
 
-    final worldRadius = size.width * 0.115;
-    final glowRadius = worldRadius * 1.42 * pulse;
+      final rawValue =
+          (math.sin(angle) + 1) / 2;
 
-    final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          const Color(0x776F45C2),
-          const Color(0x334F2CA6),
-          Colors.transparent,
-        ],
-        stops: const [0, 0.55, 1],
-      ).createShader(
-        Rect.fromCircle(
-          center: center,
-          radius: glowRadius,
-        ),
+      // Stars reach full brightness quickly and remain bright longer.
+      final brightnessValue =
+          Curves.easeOutCubic.transform(rawValue);
+
+      final opacity =
+          0.08 + brightnessValue * 0.92;
+
+      final radius =
+          sparkle.radius *
+          (0.72 + brightnessValue * 0.38);
+
+      final center = Offset(
+        size.width * sparkle.position.dx,
+        size.height * sparkle.position.dy,
       );
 
-    canvas.drawCircle(
-      center,
-      glowRadius,
-      glowPaint,
-    );
-
-    for (
-      int index = 0;
-      index < _sparklePositions.length;
-      index++
-    ) {
-      final position = _sparklePositions[index];
-      final phase =
-          progress * 2 * math.pi + index * 0.83;
-      final opacity =
-          0.35 + 0.65 * ((math.sin(phase) + 1) / 2);
-
-      final sparkleCenter = center +
-          Offset(
-            position.dx * worldRadius,
-            position.dy * worldRadius,
-          );
-
-      final sparkleSize =
-          worldRadius *
-          (index.isEven ? 0.13 : 0.09) *
-          (0.75 + opacity * 0.35);
-
       _drawSparkle(
-        canvas,
-        sparkleCenter,
-        sparkleSize,
-        opacity,
+        canvas: canvas,
+        center: center,
+        radius: radius,
+        opacity: opacity,
+        isLarge: sparkle.radius >= 6,
       );
     }
   }
 
-  void _drawSparkle(
-    Canvas canvas,
-    Offset center,
-    double radius,
-    double opacity,
-  ) {
-    final paint = Paint()
-      ..color = Color.fromRGBO(
-        255,
-        245,
-        204,
-        opacity,
+  void _drawSparkle({
+    required Canvas canvas,
+    required Offset center,
+    required double radius,
+    required double opacity,
+    required bool isLarge,
+  }) {
+    if (isLarge && opacity > 0.45) {
+      canvas.drawCircle(
+        center,
+        radius * 1.8,
+        Paint()
+          ..color = Color.fromRGBO(
+            255,
+            255,
+            255,
+            opacity * 0.13,
+          )
+          ..maskFilter = MaskFilter.blur(
+            BlurStyle.normal,
+            radius * 0.85,
+          ),
+      );
+    }
+
+    final sparkleColor = isLarge
+        ? const Color(0xFFFFF0B8)
+        : const Color(0xFFFFFCF1);
+
+    final sparklePaint = Paint()
+      ..color = sparkleColor.withValues(
+        alpha: opacity,
       )
       ..style = PaintingStyle.fill;
 
+    final horizontalRadius =
+        isLarge ? radius * 0.82 : radius;
+
     final path = Path()
-      ..moveTo(center.dx, center.dy - radius)
+      ..moveTo(
+        center.dx,
+        center.dy - radius,
+      )
       ..quadraticBezierTo(
-        center.dx + radius * 0.18,
-        center.dy - radius * 0.18,
-        center.dx + radius,
+        center.dx + horizontalRadius * 0.16,
+        center.dy - radius * 0.16,
+        center.dx + horizontalRadius,
         center.dy,
       )
       ..quadraticBezierTo(
-        center.dx + radius * 0.18,
-        center.dy + radius * 0.18,
+        center.dx + horizontalRadius * 0.16,
+        center.dy + radius * 0.16,
         center.dx,
         center.dy + radius,
       )
       ..quadraticBezierTo(
-        center.dx - radius * 0.18,
-        center.dy + radius * 0.18,
-        center.dx - radius,
+        center.dx - horizontalRadius * 0.16,
+        center.dy + radius * 0.16,
+        center.dx - horizontalRadius,
         center.dy,
       )
       ..quadraticBezierTo(
-        center.dx - radius * 0.18,
-        center.dy - radius * 0.18,
+        center.dx - horizontalRadius * 0.16,
+        center.dy - radius * 0.16,
         center.dx,
         center.dy - radius,
       )
       ..close();
 
-    canvas.drawPath(path, paint);
+    canvas.drawPath(
+      path,
+      sparklePaint,
+    );
 
     canvas.drawCircle(
       center,
-      radius * 0.16,
+      radius * 0.13,
       Paint()
-        ..color = Colors.white.withValues(
-          alpha: opacity,
+        ..color = Color.fromRGBO(
+          255,
+          255,
+          255,
+          opacity,
         ),
     );
   }
 
   @override
   bool shouldRepaint(
-    covariant WorldGlowPainter oldDelegate,
+    covariant WelcomeSparklesPainter oldDelegate,
   ) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.pulse != pulse;
+    return oldDelegate.progress != progress;
   }
+}
+
+class _SparkleData {
+  final Offset position;
+  final double radius;
+  final double phase;
+  final double speed;
+
+  const _SparkleData({
+    required this.position,
+    required this.radius,
+    required this.phase,
+    required this.speed,
+  });
 }
