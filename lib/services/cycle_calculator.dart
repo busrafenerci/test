@@ -285,10 +285,9 @@ class CycleCalculator {
       fallbackCycleLength: fallbackCycleLength,
     );
 
-    final predictedPeriodLength = calculatePredictedPeriodLength(
-      records: sortedRecords,
-      fallbackPeriodLength: fallbackPeriodLength,
-    );
+    // The user's estimated period duration setting directly controls
+    // the length of future predicted periods.
+    final predictedPeriodLength = fallbackPeriodLength;
 
     final predictedRecords = <PeriodRecord>[];
     final normalizedRangeEnd = _dateOnly(rangeEnd);

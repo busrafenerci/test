@@ -6,7 +6,12 @@ import '../services/cycle_calculator.dart';
 import '../services/storage_service.dart';
 
 class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key});
+  final int refreshVersion;
+
+  const CalendarScreen({
+    super.key,
+    this.refreshVersion = 0,
+  });
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
@@ -153,6 +158,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _loadCalendarData();
   }
 
+  @override
+  void didUpdateWidget(covariant CalendarScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.refreshVersion != widget.refreshVersion) {
+      _loadCalendarData(showLoading: false);
+    }
+  }
+
   Future<void> _loadCalendarData({
     bool showLoading = true,
   }) async {
@@ -230,22 +244,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F7FC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F7FC),
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Takvim',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF2D2733),
-          ),
-        ),
-        iconTheme: const IconThemeData(
-          color: Color(0xFF7657A8),
-        ),
-      ),
       body: SafeArea(
         child: _buildBody(),
       ),
@@ -287,27 +285,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(24, 18, 24, 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Döngü takvimin',
+            'Takvim',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
               color: Color(0xFF2D2733),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           const Text(
             'Regl ve döngü tahminlerini takip et.',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 16,
               color: Color(0xFF77707E),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           _buildCalendarCard(),
           const SizedBox(height: 12),
           _buildSelectedDayCard(),

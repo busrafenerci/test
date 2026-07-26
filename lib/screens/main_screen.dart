@@ -16,6 +16,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   int _homeRefreshVersion = 0;
+  int _calendarRefreshVersion = 0;
 
   static const Color _primaryPurple = Color(0xFF7657A8);
   static const Color _inactiveColor = Color(0xFF9B94A3);
@@ -25,9 +26,12 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _selectedIndex = index;
 
-      // Refresh Home data whenever the user returns to Home.
       if (index == 0) {
         _homeRefreshVersion++;
+      }
+
+      if (index == 1) {
+        _calendarRefreshVersion++;
       }
     });
   }
@@ -38,7 +42,9 @@ class _MainScreenState extends State<MainScreen> {
       HomeScreen(
   refreshVersion: _homeRefreshVersion,
 ),
-      const CalendarScreen(),
+      CalendarScreen(
+        refreshVersion: _calendarRefreshVersion,
+      ),
       const SettingsScreen(),
     ];
 
