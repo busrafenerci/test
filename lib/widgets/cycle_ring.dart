@@ -1,6 +1,21 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+class CyclePhaseDetails {
+  final String title;
+  final String description;
+  final String dayText;
+  final String icon;
+
+  const CyclePhaseDetails({
+    required this.title,
+    required this.description,
+    required this.dayText,
+    required this.icon,
+  });
+}
 
 class CycleRing extends StatefulWidget {
   final int cycleDay;
@@ -8,6 +23,8 @@ class CycleRing extends StatefulWidget {
   final int periodLength;
   final String phaseName;
   final String phaseIcon;
+  final String imagePath;
+  final ValueChanged<CyclePhaseDetails?>? onPhaseChanged;
 
   const CycleRing({
     super.key,
@@ -16,6 +33,8 @@ class CycleRing extends StatefulWidget {
     required this.periodLength,
     required this.phaseName,
     required this.phaseIcon,
+    required this.imagePath,
+    this.onPhaseChanged,
   });
 
   @override
@@ -23,185 +42,366 @@ class CycleRing extends StatefulWidget {
 }
 
 class _CycleRingState extends State<CycleRing> {
-  String? _activeTooltipTitle;
-  String? _activeTooltipDescription;
+  static const double _widgetSize = 300;
+  static const double _paintSize = 246;
+  static const double _tooltipWidth = 132;
+  static const double _tooltipHeight = 44;
+  static const Duration _tooltipDuration = Duration(milliseconds: 1800);
 
-  void _handlePhaseTap(double angle) {
-    double normalizedAngle = (angle + math.pi / 2) % (math.pi * 2);
-    if (normalizedAngle < 0) normalizedAngle += math.pi * 2;
+  static const Offset _ringCenter = Offset(
+    _widgetSize / 2,
+    _widgetSize / 2,
+  );
 
-    double progress = normalizedAngle / (math.pi * 2);
-    int tappedDay = (progress * widget.cycleLength).round() + 1;
-    if (tappedDay > widget.cycleLength) tappedDay = 1;
+  static const double _ringRadius = _paintSize / 2 - 12;
 
-    String title;
-    String desc;
+  _PhaseSegment? _selectedPhase;
+  Offset? _selectedIconCenter;
+  Timer? _tooltipTimer;
 
-    if (tappedDay <= widget.periodLength) {
-      title = 'Regl Dönemi';
-      desc = 'Kanama ve vücudun yenilenme sürecinin başlangıcı.';
-    } else if (tappedDay <= widget.periodLength + math.max(1, widget.cycleLength - widget.periodLength - 6 - 10)) {
-      title = 'Yenilenme / Foliküler';
-      desc = 'Enerjinin ve östrojenin yükseldiği, dinamik dönem.';
-    } else if (tappedDay <= widget.cycleLength - 10) {
-      title = 'Yumurtlama / Ovulasyon';
-      desc = 'Doğurganlığın en yüksek olduğu, enerjik zaman.';
-    } else {
-      title = 'Dinlenme / Luteal';
-      desc = 'Regl öncesi sakinleşme, vücudun dinlenme evresi.';
-    }
+  List<_PhaseSegment> _phaseSegments() {
+    final safeCycleLength = math.max(1, widget.cycleLength);
+    final menstruationDays = widget.periodLength.clamp(1, safeCycleLength);
+
+    const fertileDays = 6;
+
+    final renewalDays = math.max(
+      1,
+      safeCycleLength - menstruationDays - fertileDays - 10,
+    ).toInt();
+
+    final restDays = math.max(
+      1,
+      safeCycleLength - menstruationDays - fertileDays - renewalDays,
+    ).toInt();
+
+    return [
+      _PhaseSegment(
+        title: 'Regl dönemi',
+        description: 'Kanama ve vücudun yenilenme sürecinin başlangıcı.',
+        emoji: '🩸',
+        materialIcon: Icons.water_drop_rounded,
+        color: const Color(0xFFE56B8A),
+        startDay: 1,
+        dayCount: menstruationDays,
+      ),
+      _PhaseSegment(
+        title: 'Yenilenme dönemi',
+        description: 'Enerjinin ve östrojenin yükseldiği dinamik dönem.',
+        emoji: '🌱',
+        materialIcon: Icons.spa_rounded,
+        color: const Color(0xFF70B982),
+        startDay: menstruationDays + 1,
+        dayCount: renewalDays,
+      ),
+      _PhaseSegment(
+        title: 'Verimli dönem',
+        description:
+            'Doğurganlığın yükseldiği ve yumurtlamanın yaklaştığı dönem.',
+        emoji: '🌸',
+        materialIcon: Icons.local_florist_rounded,
+        color: const Color(0xFFD8A91D),
+        startDay: menstruationDays + renewalDays + 1,
+        dayCount: fertileDays,
+      ),
+      _PhaseSegment(
+        title: 'Dinlenme / PMS',
+        description: 'Regl öncesi sakinleşme ve dinlenme evresi.',
+        emoji: '💤',
+        materialIcon: Icons.bedtime_rounded,
+        color: const Color(0xFF8F73C8),
+        startDay: menstruationDays + renewalDays + fertileDays + 1,
+        dayCount: restDays,
+      ),
+    ];
+  }
+
+  Offset _iconCenterForPhase(_PhaseSegment phase) {
+    final safeCycleLength = math.max(1, widget.cycleLength);
+    final middleDay = phase.startDay + (phase.dayCount - 1) / 2;
+
+    final angle = -math.pi / 2 +
+        ((middleDay - 1) / safeCycleLength) * math.pi * 2;
+
+    final iconRadius = _ringRadius + 26;
+
+    return Offset(
+      _ringCenter.dx + math.cos(angle) * iconRadius,
+      _ringCenter.dy + math.sin(angle) * iconRadius,
+    );
+  }
+
+  void _selectPhase(_PhaseSegment phase) {
+    _tooltipTimer?.cancel();
 
     setState(() {
-      _activeTooltipTitle = title;
-      _activeTooltipDescription = desc;
+      _selectedPhase = phase;
+      _selectedIconCenter = _iconCenterForPhase(phase);
+    });
+
+    // The callback is intentionally not triggered here. The phase information
+    // is now displayed inside CycleRing, so the HomeScreen status card remains
+    // unchanged when a ring segment is tapped.
+
+    _tooltipTimer = Timer(_tooltipDuration, () {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _selectedPhase = null;
+        _selectedIconCenter = null;
+      });
     });
   }
 
-  void _clearTooltip() {
-    setState(() {
-      _activeTooltipTitle = null;
-      _activeTooltipDescription = null;
-    });
+  void _handleRingTap(Offset localPosition) {
+    final distanceFromCenter = (localPosition - _ringCenter).distance;
+
+    // Ignore taps on the illustration in the middle or far outside the ring.
+    if (distanceFromCenter < _ringRadius - 24 ||
+        distanceFromCenter > _ringRadius + 28) {
+      return;
+    }
+
+    final angle = math.atan2(
+      localPosition.dy - _ringCenter.dy,
+      localPosition.dx - _ringCenter.dx,
+    );
+
+    double normalizedAngle = (angle + math.pi / 2) % (math.pi * 2);
+
+    if (normalizedAngle < 0) {
+      normalizedAngle += math.pi * 2;
+    }
+
+    final safeCycleLength = math.max(1, widget.cycleLength);
+    final tappedDay =
+        ((normalizedAngle / (math.pi * 2)) * safeCycleLength).floor() + 1;
+
+    final phases = _phaseSegments();
+    final selectedPhase = phases.firstWhere(
+      (phase) {
+        final endDay = phase.startDay + phase.dayCount - 1;
+        return tappedDay >= phase.startDay && tappedDay <= endDay;
+      },
+      orElse: () => phases.last,
+    );
+
+    _selectPhase(selectedPhase);
+  }
+
+  Rect _tooltipRect(Offset iconCenter) {
+    const gap = 8.0;
+    const edgePadding = 4.0;
+
+    final isOnRight = iconCenter.dx >= _ringCenter.dx;
+    final isOnBottom = iconCenter.dy >= _ringCenter.dy;
+
+    double left = isOnRight
+        ? iconCenter.dx - _tooltipWidth - gap
+        : iconCenter.dx + gap;
+
+    double top = isOnBottom
+        ? iconCenter.dy - _tooltipHeight - gap
+        : iconCenter.dy + gap;
+
+    left = left.clamp(
+      edgePadding,
+      _widgetSize - _tooltipWidth - edgePadding,
+    );
+
+    top = top.clamp(
+      edgePadding,
+      _widgetSize - _tooltipHeight - edgePadding,
+    );
+
+    return Rect.fromLTWH(
+      left,
+      top,
+      _tooltipWidth,
+      _tooltipHeight,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tooltipTimer?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final phases = _phaseSegments();
+    final tooltipRect = _selectedIconCenter == null
+        ? null
+        : _tooltipRect(_selectedIconCenter!);
+
     return GestureDetector(
-      onPanDown: (details) {
-        final center = const Offset(155, 155);
-        final localPos = details.localPosition;
-        final dx = localPos.dx - center.dx;
-        final dy = localPos.dy - center.dy;
-        final angle = math.atan2(dy, dx);
-        _handlePhaseTap(angle);
+      behavior: HitTestBehavior.translucent,
+      onTapDown: (details) {
+        _handleRingTap(details.localPosition);
       },
-      onPanEnd: (_) => _clearTooltip(),
-      onPanCancel: _clearTooltip,
       child: SizedBox(
-        width: 310,
-        height: 310,
+        width: _widgetSize,
+        height: _widgetSize,
         child: Stack(
-          alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            CustomPaint(
-              size: const Size(260, 260),
-              painter: _CycleRingPainter(
-                cycleDay: widget.cycleDay,
-                cycleLength: widget.cycleLength,
-                periodLength: widget.periodLength,
-              ),
-            ),
-            Center(
-              child: Padding(
-                // Sağdan ve soldan boşluğu artırarak halkaya taşmayı tamamen engelliyoruz
-                padding: const EdgeInsets.symmetric(horizontal: 55),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (_activeTooltipTitle != null) ...[
-                      Text(
-                        _activeTooltipTitle!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF7657A8),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        _activeTooltipDescription!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF77707E),
-                          height: 1.25,
-                        ),
-                      ),
-                    ] else ...[
-                      Text(
-                        '${widget.cycleDay}',
-                        style: const TextStyle(
-                          fontSize: 58,
-                          height: 1,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF7657A8),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Döngü günü',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF8B8490),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        widget.phaseName,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF2D2733),
-                        ),
-                      ),
-                    ],
-                  ],
+            Positioned(
+              left: _ringCenter.dx - _paintSize / 2,
+              top: _ringCenter.dy - _paintSize / 2,
+              child: CustomPaint(
+                size: const Size(
+                  _paintSize,
+                  _paintSize,
+                ),
+                painter: _CycleRingPainter(
+                  cycleDay: widget.cycleDay,
+                  cycleLength: widget.cycleLength,
+                  periodLength: widget.periodLength,
                 ),
               ),
             ),
             Positioned(
-              top: -10,
-              child: GestureDetector(
-                onLongPressStart: (_) => setState(() {
-                  _activeTooltipTitle = 'Regl Dönemi';
-                  _activeTooltipDescription = 'Vücudun temizlenme ve yeni döngüye başlama evresi.';
-                }),
-                onLongPressEnd: (_) => _clearTooltip(),
-                child: const Text('🩸', style: TextStyle(fontSize: 24)),
+              left: _ringCenter.dx - 92,
+              top: _ringCenter.dy - 92,
+              width: 184,
+              height: 184,
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Image.asset(
+                  widget.imagePath,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  errorBuilder: (
+                    context,
+                    error,
+                    stackTrace,
+                  ) {
+                    return const SizedBox.shrink();
+                  },
+                ),
               ),
             ),
-            Positioned(
-              right: -12,
-              top: 143,
-              child: GestureDetector(
-                onLongPressStart: (_) => setState(() {
-                  _activeTooltipTitle = 'Yenilenme Dönemi';
-                  _activeTooltipDescription = 'Östrojenin arttığı, fiziksel enerjinin toplandığı evre.';
-                }),
-                onLongPressEnd: (_) => _clearTooltip(),
-                child: const Text('🌱', style: TextStyle(fontSize: 24)),
-              ),
+            ...phases.map(
+              (phase) {
+                final iconCenter = _iconCenterForPhase(phase);
+                return Positioned(
+                  left: iconCenter.dx - 17,
+                  top: iconCenter.dy - 17,
+                  width: 34,
+                  height: 34,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _selectPhase(phase),
+                    child: Center(
+                      child: Icon(
+                        phase.materialIcon,
+                        size: 26,
+                        color: phase.color,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-            Positioned(
-              bottom: -10,
-              child: GestureDetector(
-                onLongPressStart: (_) => setState(() {
-                  _activeTooltipTitle = 'Yumurtlama Dönemi';
-                  _activeTooltipDescription = 'Doğurganlığın en yüksek seviyede olduğu zaman dilimi.';
-                }),
-                onLongPressEnd: (_) => _clearTooltip(),
-                child: const Text('🌸', style: TextStyle(fontSize: 24)),
+            if (_selectedPhase != null && tooltipRect != null)
+              Positioned(
+                left: tooltipRect.left,
+                top: tooltipRect.top,
+                width: tooltipRect.width,
+                height: tooltipRect.height,
+                child: IgnorePointer(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                          scale: Tween<double>(begin: 0.92, end: 1).animate(
+                            CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOut,
+                            ),
+                          ),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Container(
+                      key: ValueKey(_selectedPhase!.title),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _selectedPhase!.color.withValues(alpha: 0.35),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.11),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _selectedPhase!.materialIcon,
+                            size: 17,
+                            color: _selectedPhase!.color,
+                          ),
+                          const SizedBox(width: 7),
+                          Expanded(
+                            child: Text(
+                              _selectedPhase!.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                height: 1.1,
+                                color: Color(0xFF493B5D),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            Positioned(
-              left: -12,
-              top: 143,
-              child: GestureDetector(
-                onLongPressStart: (_) => setState(() {
-                  _activeTooltipTitle = 'Dinlenme Dönemi';
-                  _activeTooltipDescription = 'Regl öncesi sakinleşme, yavaşlama ve içe dönme evresi.';
-                }),
-                onLongPressEnd: (_) => _clearTooltip(),
-                child: const Text('💤', style: TextStyle(fontSize: 24)),
-              ),
-            ),
           ],
         ),
       ),
     );
   }
+}
+
+class _PhaseSegment {
+  final String title;
+  final String description;
+  final String emoji;
+  final IconData materialIcon;
+  final Color color;
+  final int startDay;
+  final int dayCount;
+
+  const _PhaseSegment({
+    required this.title,
+    required this.description,
+    required this.emoji,
+    required this.materialIcon,
+    required this.color,
+    required this.startDay,
+    required this.dayCount,
+  });
 }
 
 class _CycleRingPainter extends CustomPainter {
@@ -216,12 +416,30 @@ class _CycleRingPainter extends CustomPainter {
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - 12;
+  void paint(
+    Canvas canvas,
+    Size size,
+  ) {
+    final safeCycleLength = math.max(1, cycleLength);
+    final center = Offset(
+      size.width / 2,
+      size.height / 2,
+    );
+
+    final radius = math.min(
+          size.width,
+          size.height,
+        ) /
+        2 -
+        12;
+
     const stroke = 14.0;
-    final rect = Rect.fromCircle(center: center, radius: radius);
     const gap = 0.04;
+
+    final rect = Rect.fromCircle(
+      center: center,
+      radius: radius,
+    );
 
     const menstruationColor = Color(0xFFE56B8A);
     const renewalColor = Color(0xFF8BCF9B);
@@ -234,47 +452,104 @@ class _CycleRingPainter extends CustomPainter {
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawCircle(center, radius, backgroundPaint);
+    canvas.drawCircle(
+      center,
+      radius,
+      backgroundPaint,
+    );
 
-    final int menstruationDays = periodLength;
-    const int fertileDays = 6;
-    final int renewalDays = math.max(1, cycleLength - menstruationDays - fertileDays - 10).toInt();
-    final int restDays = cycleLength - menstruationDays - fertileDays - renewalDays;
+    final menstruationDays = periodLength.clamp(1, safeCycleLength);
+    const fertileDays = 6;
+
+    final renewalDays = math.max(
+      1,
+      safeCycleLength - menstruationDays - fertileDays - 10,
+    ).toInt();
+
+    final restDays = math.max(
+      1,
+      safeCycleLength - menstruationDays - fertileDays - renewalDays,
+    ).toInt();
 
     double start = -math.pi / 2;
 
-    void drawPhase(int days, Color color) {
-      if (days <= 0) return;
-      final sweep = (days / cycleLength) * math.pi * 2;
+    void drawPhase(
+      int days,
+      Color color,
+    ) {
+      if (days <= 0) {
+        return;
+      }
+
+      final sweep = (days / safeCycleLength) * math.pi * 2;
+
       final phasePaint = Paint()
         ..color = color
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
         ..strokeCap = StrokeCap.round;
 
-      canvas.drawArc(rect, start + gap, math.max(0, sweep - gap * 2), false, phasePaint);
+      canvas.drawArc(
+        rect,
+        start + gap,
+        math.max(
+          0,
+          sweep - gap * 2,
+        ),
+        false,
+        phasePaint,
+      );
+
       start += sweep;
     }
 
-    drawPhase(menstruationDays, menstruationColor);
-    drawPhase(renewalDays, renewalColor);
-    drawPhase(fertileDays, fertileColor);
-    drawPhase(restDays, restColor);
+    drawPhase(
+      menstruationDays,
+      menstruationColor,
+    );
 
-    final safeCycleDay = cycleDay.clamp(1, cycleLength);
-    final markerAngle = -math.pi / 2 + ((safeCycleDay - 1) / cycleLength) * math.pi * 2;
+    drawPhase(
+      renewalDays,
+      renewalColor,
+    );
+
+    drawPhase(
+      fertileDays,
+      fertileColor,
+    );
+
+    drawPhase(
+      restDays,
+      restColor,
+    );
+
+    final safeCycleDay = cycleDay.clamp(1, safeCycleLength);
+
+    final markerAngle = -math.pi / 2 +
+        ((safeCycleDay - 1) / safeCycleLength) * math.pi * 2;
 
     final markerCenter = Offset(
       center.dx + math.cos(markerAngle) * radius,
       center.dy + math.sin(markerAngle) * radius,
     );
 
-    canvas.drawCircle(markerCenter, 8, Paint()..color = Colors.white);
-    canvas.drawCircle(markerCenter, 5, Paint()..color = const Color(0xFF7657A8));
+    canvas.drawCircle(
+      markerCenter,
+      9,
+      Paint()..color = Colors.white,
+    );
+
+    canvas.drawCircle(
+      markerCenter,
+      6,
+      Paint()..color = const Color(0xFF7657A8),
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _CycleRingPainter oldDelegate) {
+  bool shouldRepaint(
+    covariant _CycleRingPainter oldDelegate,
+  ) {
     return oldDelegate.cycleDay != cycleDay ||
         oldDelegate.cycleLength != cycleLength ||
         oldDelegate.periodLength != periodLength;

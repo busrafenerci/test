@@ -20,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late Future<Map<String, dynamic>> _dataFuture;
+  CyclePhaseDetails? _selectedPhaseDetails;
 
   @override
   void initState() {
@@ -69,7 +70,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _reloadData() {
-    setState(_loadData);
+    setState(() {
+      _selectedPhaseDetails = null;
+      _loadData();
+    });
   }
 
   @override
@@ -180,107 +184,51 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     required CycleInfo cycleInfo,
     required CycleResult result,
   }) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 18, 24, 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(
-            cycleInfo: cycleInfo,
-            result: result,
-          ),
-          const SizedBox(height: 18),
-          _buildCycleCard(result, cycleInfo),
-          const SizedBox(height: 20),
-          _buildInfoCard(
-            title: 'Sonraki regl',
-            value: _nextPeriodText(result.daysUntilNextPeriod),
-            subtitle: _formatDate(result.nextPeriodDate),
-          ),
-          const SizedBox(height: 16),
-          _buildInfoCard(
-            title: 'Döngü bilgilerin',
-            value: '${cycleInfo.cycleLength} günlük döngü',
-            subtitle: 'Ortalama regl süresi: ${cycleInfo.periodLength} gün',
-          ),
-        ],
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () {
+        if (_selectedPhaseDetails != null) {
+          setState(() {
+            _selectedPhaseDetails = null;
+          });
+        }
+      },
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(24, 18, 24, 18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Luna’ya hoş geldin',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF2D2733),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Döngün',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF77707E),
+              ),
+            ),
+            const SizedBox(height: 14),
+            _buildCycleCard(result, cycleInfo),
+            const SizedBox(height: 10),
+            _buildTodayStatusCard(
+              result: result,
+            ),
+            const SizedBox(height: 10),
+            _buildCompactCycleInfoCard(
+              cycleInfo: cycleInfo,
+              result: result,
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildHeader({
-    required CycleInfo cycleInfo,
-    required CycleResult result,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Luna’ya hoş geldin',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D2733),
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Bugünkü durumun',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF77707E),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 104,
-          height: 96,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 82,
-                height: 82,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFEDE5F7),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF7657A8)
-                          .withValues(alpha: 0.08),
-                      blurRadius: 18,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Image.asset(
-                  _getHomeImage(
-                    cycleInfo: cycleInfo,
-                    result: result,
-                  ),
-                  width: 100,
-                  height: 94,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -315,10 +263,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   ) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
+      height: 326,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
@@ -330,58 +275,348 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ],
       ),
-      child: Center(
-        child: CycleRing(
-          cycleDay: result.cycleDay,
-          cycleLength: cycleInfo.cycleLength,
-          periodLength: cycleInfo.periodLength,
-          phaseName: result.phaseName,
-          phaseIcon: result.phaseIcon,
-        ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+              child: Center(
+                child: CycleRing(
+                  cycleDay: result.cycleDay,
+                  cycleLength: cycleInfo.cycleLength,
+                  periodLength: cycleInfo.periodLength,
+                  phaseName: result.phaseName,
+                  phaseIcon: result.phaseIcon,
+                  imagePath: _getHomeImage(
+                    cycleInfo: cycleInfo,
+                    result: result,
+                  ),
+                  onPhaseChanged: (details) {
+                    setState(() {
+                      _selectedPhaseDetails = details;
+                    });
+                  },
+                ),
+              ),
+            ),
+          ),
+          if (_selectedPhaseDetails != null)
+            Positioned(
+              top: 14,
+              right: 14,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+                child: _buildPhaseTooltip(_selectedPhaseDetails!),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoCard({
-    required String title,
-    required String value,
-    required String subtitle,
+  Widget _buildPhaseTooltip(CyclePhaseDetails details) {
+    return Container(
+      constraints: const BoxConstraints(
+        minWidth: 132,
+        maxWidth: 175,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 9,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFECE4F5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            details.icon,
+            style: const TextStyle(fontSize: 18),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  details.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2D2733),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  details.dayText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF7657A8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTodayStatusCard({
+    required CycleResult result,
   }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 16,
+        horizontal: 16,
+        vertical: 11,
       ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F3FB),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFECE4F5),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: Color(0xFFEDE5F7),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              result.phaseIcon,
+              style: const TextStyle(fontSize: 20),
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bugünkü durum',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF8B8490),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _currentPhaseTitle(result),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2D2733),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _currentDayText(result),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF7657A8),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _currentPhaseDescription(result),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    height: 1.2,
+                    color: Color(0xFF77707E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _currentPhaseTitle(CycleResult result) {
+    switch (result.phase) {
+      case CyclePhase.menstruation:
+        return 'Regl dönemindesin';
+      case CyclePhase.renewal:
+        return 'Yenilenme dönemindesin';
+      case CyclePhase.fertile:
+        return 'Verimli dönemdesin';
+      case CyclePhase.pms:
+        return 'PMS dönemindesin';
+      case CyclePhase.rest:
+        return 'Dinlenme dönemindesin';
+    }
+  }
+
+  String _currentDayText(CycleResult result) {
+    if (result.phase == CyclePhase.menstruation) {
+      return '${result.cycleDay}. regl günü';
+    }
+
+    return '${result.cycleDay}. döngü günü';
+  }
+
+  String _currentPhaseDescription(CycleResult result) {
+    switch (result.phase) {
+      case CyclePhase.menstruation:
+        return 'Vücudun yenilenme sürecinde. Bugün kendine nazik davran.';
+      case CyclePhase.renewal:
+        return 'Enerjin yeniden yükselmeye başlayabilir.';
+      case CyclePhase.fertile:
+        return 'Enerjinin ve doğurganlığının yükseldiği dönemdesin.';
+      case CyclePhase.pms:
+        return 'Bugün dinlenmeye ve kendine zaman ayırmaya özen göster.';
+      case CyclePhase.rest:
+        return 'Döngünün daha sakin bir evresindesin.';
+    }
+  }
+
+  Widget _buildCompactCycleInfoCard({
+    required CycleInfo cycleInfo,
+    required CycleResult result,
+  }) {
+    return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.035),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF77707E),
+          _buildCompactInfoRow(
+            icon: Icons.calendar_month_rounded,
+            iconBackgroundColor: const Color(0xFFFCE6EF),
+            iconColor: const Color(0xFFE34D87),
+            label: 'Sonraki regl',
+            value: _nextPeriodText(result.daysUntilNextPeriod),
+            trailingText: _formatDate(result.nextPeriodDate),
+          ),
+          const Divider(
+            height: 1,
+            thickness: 1,
+            indent: 68,
+            endIndent: 16,
+            color: Color(0xFFF1EDF4),
+          ),
+          _buildCompactInfoRow(
+            icon: Icons.bar_chart_rounded,
+            iconBackgroundColor: const Color(0xFFEFE8FA),
+            iconColor: const Color(0xFF7657A8),
+            label: 'Döngü bilgilerim',
+            value: '${cycleInfo.cycleLength} günlük döngü',
+            trailingText: 'Regl: ${cycleInfo.periodLength} gün',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactInfoRow({
+    required IconData icon,
+    required Color iconBackgroundColor,
+    required Color iconColor,
+    required String label,
+    required String value,
+    required String trailingText,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 9,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconBackgroundColor,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 21,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 19,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF2D2733),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF8B8490),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2D2733),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF9A939F),
+          const SizedBox(width: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 112),
+            child: Text(
+              trailingText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFF9A939F),
+              ),
             ),
           ),
         ],
