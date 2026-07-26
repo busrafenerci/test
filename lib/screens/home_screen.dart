@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../models/cycle_info.dart';
@@ -6,7 +5,6 @@ import '../models/period_record.dart';
 import '../services/cycle_calculator.dart';
 import '../services/storage_service.dart';
 import '../widgets/cycle_ring.dart';
-
 
 class HomeScreen extends StatefulWidget {
   final int refreshVersion;
@@ -48,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+
     if (state == AppLifecycleState.resumed) {
       _reloadData();
     }
@@ -70,9 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _reloadData() {
-    setState(() {
-      _loadData();
-    });
+    setState(_loadData);
   }
 
   @override
@@ -100,38 +97,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             final int fallbackPeriodLength = data['fallbackPeriodLength'];
             final int fallbackCycleLength = data['fallbackCycleLength'];
 
-            final today = DateTime.now();
-            final normalizedToday = DateTime(today.year, today.month, today.day);
+            final now = DateTime.now();
+            final today = DateTime(now.year, now.month, now.day);
 
-            final relevantRecord = CycleCalculator.findLastRecordBefore(
-              normalizedToday,
-              actualRecords,
-            );
-
-            DateTime lastPeriodDate;
-            int periodLength = fallbackPeriodLength;
-            int cycleLength = fallbackCycleLength;
-
-            if (relevantRecord != null) {
-              lastPeriodDate = relevantRecord.startDate;
-              periodLength = relevantRecord.periodLength;
-            } else if (actualRecords.isNotEmpty) {
-              final sorted = [...actualRecords]
-                ..sort((a, b) => a.startDate.compareTo(b.startDate));
-              lastPeriodDate = sorted.first.startDate;
-            } else {
-              lastPeriodDate = normalizedToday.subtract(const Duration(days: 14));
-            }
-
-            final cycleInfo = CycleInfo(
-              lastPeriodDate: lastPeriodDate,
-              periodLength: periodLength,
-              cycleLength: cycleLength,
+            final cycleInfo = _createCycleInfoForToday(
+              today: today,
+              records: actualRecords,
+              fallbackPeriodLength: fallbackPeriodLength,
+              fallbackCycleLength: fallbackCycleLength,
             );
 
             final result = CycleCalculator.calculate(
               cycleInfo,
-              currentDate: normalizedToday,
+              currentDate: today,
             );
 
             return _buildHomeContent(
@@ -144,6 +122,60 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  CycleInfo _createCycleInfoForToday({
+    required DateTime today,
+    required List<PeriodRecord> records,
+    required int fallbackPeriodLength,
+    required int fallbackCycleLength,
+  }) {
+    final lastPastOrTodayRecord = CycleCalculator.findLastRecordBefore(
+      today,
+      records,
+    );
+
+    if (lastPastOrTodayRecord != null) {
+      return CycleInfo(
+        lastPeriodDate: lastPastOrTodayRecord.startDate,
+        periodLength: lastPastOrTodayRecord.periodLength,
+        cycleLength: fallbackCycleLength,
+      );
+    }
+
+    // There is no past record, but there may be a future period start.
+    // In that case, estimate the previous cycle start by going back one
+    // full cycle. This prevents a future date from being shown as day 1 today.
+    final futureRecords = records.where((record) {
+      final startDate = _dateOnly(record.startDate);
+      return startDate.isAfter(today);
+    }).toList()
+      ..sort((first, second) =>
+          first.startDate.compareTo(second.startDate));
+
+    if (futureRecords.isNotEmpty) {
+      final nearestFutureRecord = futureRecords.first;
+      final estimatedPreviousPeriodDate = _dateOnly(
+        nearestFutureRecord.startDate,
+      ).subtract(
+        Duration(days: fallbackCycleLength),
+      );
+
+      return CycleInfo(
+        lastPeriodDate: estimatedPreviousPeriodDate,
+        periodLength: nearestFutureRecord.periodLength,
+        cycleLength: fallbackCycleLength,
+      );
+    }
+
+    // Defensive fallback for an unexpected empty record list.
+    return CycleInfo(
+      lastPeriodDate: today.subtract(
+        Duration(days: fallbackCycleLength - 1),
+      ),
+      periodLength: fallbackPeriodLength,
+      cycleLength: fallbackCycleLength,
+    );
+  }
+
   Widget _buildHomeContent({
     required CycleInfo cycleInfo,
     required CycleResult result,
@@ -153,23 +185,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Luna’ya hoş geldin',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF2D2733),
-            ),
+          _buildHeader(
+            cycleInfo: cycleInfo,
+            result: result,
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Bugünkü durumun',
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(0xFF77707E),
-            ),
-          ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 18),
           _buildCycleCard(result, cycleInfo),
           const SizedBox(height: 20),
           _buildInfoCard(
@@ -186,6 +206,107 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ],
       ),
     );
+  }
+
+  Widget _buildHeader({
+    required CycleInfo cycleInfo,
+    required CycleResult result,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Luna’ya hoş geldin',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2D2733),
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Bugünkü durumun',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF77707E),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 104,
+          height: 96,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 82,
+                height: 82,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFEDE5F7),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7657A8)
+                          .withValues(alpha: 0.08),
+                      blurRadius: 18,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Image.asset(
+                  _getHomeImage(
+                    cycleInfo: cycleInfo,
+                    result: result,
+                  ),
+                  width: 100,
+                  height: 94,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getHomeImage({
+    required CycleInfo cycleInfo,
+    required CycleResult result,
+  }) {
+    final ovulationDay = cycleInfo.cycleLength - 14;
+
+    if (result.phase == CyclePhase.menstruation) {
+      return 'assets/images/luna_home_period.png';
+    }
+
+    if (result.cycleDay == ovulationDay) {
+      return 'assets/images/luna_home_ovulation.png';
+    }
+
+    if (result.phase == CyclePhase.fertile) {
+      return 'assets/images/luna_home_fertile.png';
+    }
+
+    if (result.phase == CyclePhase.pms) {
+      return 'assets/images/luna_home_pms.png';
+    }
+
+    return 'assets/images/luna_home_default.png';
   }
 
   Widget _buildCycleCard(
@@ -323,5 +444,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     ];
 
     return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  DateTime _dateOnly(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 }
