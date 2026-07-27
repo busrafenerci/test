@@ -219,7 +219,7 @@ class _SetupScreenState extends State<SetupScreen>
                           const SizedBox(height: 10),
                           NumberPicker(
                             value: _cycleLength,
-                            minValue: 21,
+                            minValue: 10,
                             maxValue: 45,
                             color: AppColors.cycle,
                             backgroundColor: AppColors.cycleBackground,

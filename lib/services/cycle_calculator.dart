@@ -94,29 +94,42 @@ class CycleCalculator {
     return candidate;
   }
 
-  /// Verilen tarihin doğurgan (verimli) döneme denk gelip gelmediğini kontrol eder
-  /// Verilen tarihin doğurgan (verimli) döneme denk gelip gelmediğini kontrol eder
+  /// 21 günden kısa döngülerde standart yumurtlama formülü güvenilir
+  /// olmadığı için doğurganlık tahmini gösterilmez.
   static bool isFertileDay({
     required DateTime date,
     required CycleInfo cycleInfo,
   }) {
-    final cycleDay = getCycleDay(date: date, cycleInfo: cycleInfo);
-    final ovulationDay = cycleInfo.cycleLength - 14;
-    final fertileStart = ovulationDay - 4;
-    final fertileEnd = ovulationDay + 1;
+    if (cycleInfo.cycleLength < 21) {
+      return false;
+    }
 
-    return cycleDay >= fertileStart && cycleDay <= fertileEnd;
+    final cycleDay = getCycleDay(date: date, cycleInfo: cycleInfo);
+    final boundaries = _phaseBoundaries(
+      cycleLength: cycleInfo.cycleLength,
+      periodLength: cycleInfo.periodLength,
+    );
+
+    return cycleDay >= boundaries.fertileStart &&
+        cycleDay <= boundaries.fertileEnd;
   }
 
-  /// Verilen tarihin tam yumurtlama (ovülasyon) gününe denk gelip gelmediğini kontrol eder
+  /// 21 günden kısa döngülerde kesin bir yumurtlama günü üretilmez.
   static bool isOvulationDay({
     required DateTime date,
     required CycleInfo cycleInfo,
   }) {
-    final cycleDay = getCycleDay(date: date, cycleInfo: cycleInfo);
-    final ovulationDay = cycleInfo.cycleLength - 14;
+    if (cycleInfo.cycleLength < 21) {
+      return false;
+    }
 
-    return cycleDay == ovulationDay;
+    final cycleDay = getCycleDay(date: date, cycleInfo: cycleInfo);
+    final boundaries = _phaseBoundaries(
+      cycleLength: cycleInfo.cycleLength,
+      periodLength: cycleInfo.periodLength,
+    );
+
+    return cycleDay == boundaries.ovulationDay;
   }
 
   static PeriodRecord? findActualRecordForDate({
@@ -175,28 +188,65 @@ class CycleCalculator {
     required int periodLength,
     required int cycleLength,
   }) {
-    final ovulationDay = cycleLength - 14;
-    final fertileStart = ovulationDay - 4;
-    final fertileEnd = ovulationDay + 1;
-    final pmsStartDay = cycleLength - 6;
+    final safeCycleLength = cycleLength < 1 ? 1 : cycleLength;
+    final safePeriodLength = periodLength.clamp(1, safeCycleLength).toInt();
 
-    if (cycleDay <= periodLength) {
+    if (cycleDay <= safePeriodLength) {
       return CyclePhase.menstruation;
     }
 
-    if (cycleDay < fertileStart) {
+    // Çok kısa döngülerde doğurganlık/yumurtlama tahmini vermek yerine
+    // regl dışındaki günleri nötr bir evre olarak göster.
+    if (safeCycleLength < 21) {
+      return CyclePhase.rest;
+    }
+
+    final boundaries = _phaseBoundaries(
+      cycleLength: safeCycleLength,
+      periodLength: safePeriodLength,
+    );
+
+    if (cycleDay < boundaries.fertileStart) {
       return CyclePhase.renewal;
     }
 
-    if (cycleDay <= fertileEnd) {
+    if (cycleDay <= boundaries.fertileEnd) {
       return CyclePhase.fertile;
     }
 
-    if (cycleDay >= pmsStartDay) {
+    if (cycleDay >= boundaries.pmsStartDay) {
       return CyclePhase.pms;
     }
 
     return CyclePhase.rest;
+  }
+
+  static _PhaseBoundaries _phaseBoundaries({
+    required int cycleLength,
+    required int periodLength,
+  }) {
+    final safeCycleLength = cycleLength < 1 ? 1 : cycleLength;
+    final safePeriodLength = periodLength.clamp(1, safeCycleLength).toInt();
+
+    final ovulationDay = (safeCycleLength - 14)
+        .clamp(safePeriodLength + 1, safeCycleLength)
+        .toInt();
+    final fertileStart = (ovulationDay - 4)
+        .clamp(safePeriodLength + 1, safeCycleLength)
+        .toInt();
+    final fertileEnd = (ovulationDay + 1)
+        .clamp(fertileStart, safeCycleLength)
+        .toInt();
+    final pmsStartDay = (safeCycleLength - 5)
+        .clamp(fertileEnd + 1, safeCycleLength + 1)
+        .toInt();
+
+    return _PhaseBoundaries(
+      ovulationDay: ovulationDay,
+      fertileStart: fertileStart,
+      fertileEnd: fertileEnd,
+      pmsStartDay: pmsStartDay,
+    );
   }
 
   static int calculatePredictedPeriodLength({
@@ -227,16 +277,17 @@ class CycleCalculator {
     required List<PeriodRecord> records,
     required int fallbackCycleLength,
   }) {
+    final safeFallback = fallbackCycleLength.clamp(1, 60).toInt();
     final sortedRecords = [...records]
       ..sort(
         (first, second) => first.startDate.compareTo(second.startDate),
       );
 
     if (sortedRecords.length < 2) {
-      return fallbackCycleLength;
+      return safeFallback;
     }
 
-    final cycleLengths = <int>[];
+    final inferredCycleLengths = <int>[];
 
     for (var index = 1; index < sortedRecords.length; index++) {
       final previousRecord = sortedRecords[index - 1];
@@ -248,20 +299,37 @@ class CycleCalculator {
         _dateOnly(previousRecord.startDate),
       ).inDays;
 
-      if (difference >= 15 && difference <= 60) {
-        cycleLengths.add(difference);
+      if (difference <= 0) {
+        continue;
+      }
+
+      // Uzun boşluğu tek bir sıra dışı döngü saymak yerine, kullanıcının
+      // mevcut tahmini döngü değerine göre kaç döngü geçmiş olabileceğini
+      // hesapla. Örn. 57 gün / 28 gün ≈ 2 döngü => 29 + 29 gün.
+      final estimatedCycleCount =
+          (difference / safeFallback).round().clamp(1, 12).toInt();
+      final normalizedCycleLength =
+          (difference / estimatedCycleCount).round();
+
+      if (normalizedCycleLength < 1 || normalizedCycleLength > 60) {
+        continue;
+      }
+
+      for (var count = 0; count < estimatedCycleCount; count++) {
+        inferredCycleLengths.add(normalizedCycleLength);
       }
     }
 
-    if (cycleLengths.isEmpty) {
-      return fallbackCycleLength;
+    if (inferredCycleLengths.isEmpty) {
+      return safeFallback;
     }
 
-    final recentCycleLengths = cycleLengths.length <= _historyLimit
-        ? cycleLengths
-        : cycleLengths.sublist(
-            cycleLengths.length - _historyLimit,
-          );
+    final recentCycleLengths =
+        inferredCycleLengths.length <= _historyLimit
+            ? inferredCycleLengths
+            : inferredCycleLengths.sublist(
+                inferredCycleLengths.length - _historyLimit,
+              );
 
     return _calculateMedian(recentCycleLengths);
   }
@@ -401,4 +469,18 @@ class CycleCalculator {
       date.day,
     );
   }
+}
+
+class _PhaseBoundaries {
+  final int ovulationDay;
+  final int fertileStart;
+  final int fertileEnd;
+  final int pmsStartDay;
+
+  const _PhaseBoundaries({
+    required this.ovulationDay,
+    required this.fertileStart,
+    required this.fertileEnd,
+    required this.pmsStartDay,
+  });
 }

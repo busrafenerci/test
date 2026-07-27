@@ -25,10 +25,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLoading = true;
   bool _isResetting = false;
 
-  static const Color _primaryPurple = Color(0xFF7C5CE7);
-  static const Color _darkPurple = Color(0xFF382C62);
-  static const Color _backgroundColor = Color(0xFFF8F6FF);
-  static const Color _borderColor = Color(0xFFECE7FA);
+  static const Color _primaryPurple = Color(0xFF7657A8);
+  static const Color _darkPurple = Color(0xFF2D2733);
+  static const Color _backgroundColor = Color(0xFFF9F7FC);
+  static const Color _borderColor = Color(0xFFF1EDF4);
   static const Color _dangerColor = Color(0xFFD74B62);
 
   @override
@@ -74,8 +74,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       description:
           'Luna, bir sonraki regl tarihini tahmin ederken bu değeri kullanır.',
       currentValue: _settings.averageCycleLength,
-      minimumValue: 21,
-      maximumValue: 45,
+      minimumValue: 10,
+      maximumValue: 60,
     );
 
     if (selectedValue == null ||
@@ -231,7 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 20),
                     SizedBox(
                       height: 250,
                       child: ListWheelScrollView.useDelegate(
@@ -468,10 +468,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               )
             : SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
-                  16,
-                  14,
-                  16,
-                  16,
+                  24,
+                  18,
+                  24,
+                  18,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -479,18 +479,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Text(
                       'Ayarlar',
                       style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
                         color: _darkPurple,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     const Text(
                       'Döngü ayarlarını düzenleyebilir, gizlilik bilgilerine erişebilir ve verilerini yönetebilirsin.',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         height: 1.4,
-                        color: Color(0xFF786F8E),
+                        color: Color(0xFF77707E),
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -514,7 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     _SettingsSection(
                       title: 'Bilgilendirme',
                       children: [
@@ -534,7 +534,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     _SettingsSection(
                       title: 'Gizlilik',
                       children: [
@@ -547,7 +547,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     _SettingsSection(
                       title: 'Veriler',
                       children: [
@@ -589,16 +589,16 @@ class _SettingsSection extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(
-            left: 4,
+            left: 0,
             bottom: 8,
           ),
           child: Text(
             title.toUpperCase(),
             style: const TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: Color(0xFF8D859E),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.7,
+              color: Color(0xFF9A939F),
             ),
           ),
         ),
@@ -606,16 +606,13 @@ class _SettingsSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: _SettingsScreenState._borderColor,
-            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(
                   alpha: 0.035,
                 ),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -654,18 +651,18 @@ class _SettingsTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+          horizontal: 14,
+          vertical: 11,
         ),
         child: Row(
           children: [
             Icon(
               icon,
-              size: 23,
+              size: 22,
               color: iconColor ??
                   _SettingsScreenState._primaryPurple,
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment:
@@ -677,16 +674,16 @@ class _SettingsTile extends StatelessWidget {
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: titleColor ??
-                          const Color(0xFF514866),
+                          const Color(0xFF2D2733),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
                     subtitle,
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF81798F),
+                      color: Color(0xFF8B8490),
                     ),
                   ),
                 ],
@@ -705,7 +702,7 @@ class _SettingsTile extends StatelessWidget {
             else
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFFAAA3B8),
+                color: Color(0xFF9A939F),
               ),
           ],
         ),
@@ -721,8 +718,8 @@ class _SettingsDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.only(
-        left: 53,
-        right: 16,
+        left: 48,
+        right: 14,
       ),
       child: Divider(
         height: 1,

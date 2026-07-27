@@ -40,8 +40,8 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final screens = [
       HomeScreen(
-  refreshVersion: _homeRefreshVersion,
-),
+        refreshVersion: _homeRefreshVersion,
+      ),
       CalendarScreen(
         refreshVersion: _calendarRefreshVersion,
       ),

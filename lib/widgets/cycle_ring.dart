@@ -60,60 +60,12 @@ class _CycleRingState extends State<CycleRing> {
   Timer? _tooltipTimer;
 
   List<_PhaseSegment> _phaseSegments() {
-    final safeCycleLength = math.max(1, widget.cycleLength);
-    final menstruationDays = widget.periodLength.clamp(1, safeCycleLength);
+    final layout = _CyclePhaseLayout.create(
+      cycleLength: widget.cycleLength,
+      periodLength: widget.periodLength,
+    );
 
-    const fertileDays = 6;
-
-    final renewalDays = math.max(
-      1,
-      safeCycleLength - menstruationDays - fertileDays - 10,
-    ).toInt();
-
-    final restDays = math.max(
-      1,
-      safeCycleLength - menstruationDays - fertileDays - renewalDays,
-    ).toInt();
-
-    return [
-      _PhaseSegment(
-        title: 'Regl dönemi',
-        description: 'Kanama ve vücudun yenilenme sürecinin başlangıcı.',
-        emoji: '🩸',
-        materialIcon: Icons.water_drop_rounded,
-        color: const Color(0xFFE56B8A),
-        startDay: 1,
-        dayCount: menstruationDays,
-      ),
-      _PhaseSegment(
-        title: 'Yenilenme dönemi',
-        description: 'Enerjinin ve östrojenin yükseldiği dinamik dönem.',
-        emoji: '🌱',
-        materialIcon: Icons.spa_rounded,
-        color: const Color(0xFF70B982),
-        startDay: menstruationDays + 1,
-        dayCount: renewalDays,
-      ),
-      _PhaseSegment(
-        title: 'Verimli dönem',
-        description:
-            'Doğurganlığın yükseldiği ve yumurtlamanın yaklaştığı dönem.',
-        emoji: '🌸',
-        materialIcon: Icons.local_florist_rounded,
-        color: const Color(0xFFD8A91D),
-        startDay: menstruationDays + renewalDays + 1,
-        dayCount: fertileDays,
-      ),
-      _PhaseSegment(
-        title: 'Dinlenme / PMS',
-        description: 'Regl öncesi sakinleşme ve dinlenme evresi.',
-        emoji: '💤',
-        materialIcon: Icons.bedtime_rounded,
-        color: const Color(0xFF8F73C8),
-        startDay: menstruationDays + renewalDays + fertileDays + 1,
-        dayCount: restDays,
-      ),
-    ];
+    return layout.segments;
   }
 
   Offset _iconCenterForPhase(_PhaseSegment phase) {
@@ -404,6 +356,121 @@ class _PhaseSegment {
   });
 }
 
+class _CyclePhaseLayout {
+  final List<_PhaseSegment> segments;
+
+  const _CyclePhaseLayout(this.segments);
+
+  factory _CyclePhaseLayout.create({
+    required int cycleLength,
+    required int periodLength,
+  }) {
+    final safeCycleLength = math.max(1, cycleLength);
+    final menstruationDays = periodLength.clamp(1, safeCycleLength).toInt();
+    final remainingDays = safeCycleLength - menstruationDays;
+
+    final segments = <_PhaseSegment>[
+      _PhaseSegment(
+        title: 'Regl dönemi',
+        description: 'Kanama ve vücudun yenilenme sürecinin başlangıcı.',
+        emoji: '🩸',
+        materialIcon: Icons.water_drop_rounded,
+        color: const Color(0xFFE56B8A),
+        startDay: 1,
+        dayCount: menstruationDays,
+      ),
+    ];
+
+    if (remainingDays <= 0) {
+      return _CyclePhaseLayout(segments);
+    }
+
+    // 21 günden kısa döngülerde standart yumurtlama formülü uygulanmaz.
+    // Halka yalnızca gerçek regl günlerini ve kalan nötr günleri gösterir.
+    if (safeCycleLength < 21) {
+      segments.add(
+        _PhaseSegment(
+          title: 'Diğer günler',
+          description:
+              'Kısa döngülerde yumurtlama ve doğurganlık tahmini gösterilmez.',
+          emoji: '💤',
+          materialIcon: Icons.bedtime_rounded,
+          color: const Color(0xFFB9A6E8),
+          startDay: menstruationDays + 1,
+          dayCount: remainingDays,
+        ),
+      );
+      return _CyclePhaseLayout(segments);
+    }
+
+    final ovulationDay = (safeCycleLength - 14)
+        .clamp(menstruationDays + 1, safeCycleLength)
+        .toInt();
+    final fertileStart = (ovulationDay - 4)
+        .clamp(menstruationDays + 1, safeCycleLength)
+        .toInt();
+    final fertileEnd = (ovulationDay + 1)
+        .clamp(fertileStart, safeCycleLength)
+        .toInt();
+
+    final renewalDays =
+        math.max(0, fertileStart - menstruationDays - 1).toInt();
+    final fertileDays =
+        math.max(0, fertileEnd - fertileStart + 1).toInt();
+    final postFertileDays =
+        math.max(0, safeCycleLength - fertileEnd).toInt();
+
+    var nextStartDay = menstruationDays + 1;
+
+    if (renewalDays > 0) {
+      segments.add(
+        _PhaseSegment(
+          title: 'Yenilenme dönemi',
+          description: 'Enerjinin ve östrojenin yükseldiği dinamik dönem.',
+          emoji: '🌱',
+          materialIcon: Icons.spa_rounded,
+          color: const Color(0xFF8BCF9B),
+          startDay: nextStartDay,
+          dayCount: renewalDays,
+        ),
+      );
+      nextStartDay += renewalDays;
+    }
+
+    if (fertileDays > 0) {
+      segments.add(
+        _PhaseSegment(
+          title: 'Verimli dönem',
+          description:
+              'Doğurganlığın yükseldiği ve yumurtlamanın yaklaştığı tahmini dönem.',
+          emoji: '🌸',
+          materialIcon: Icons.local_florist_rounded,
+          color: const Color(0xFFF4C95D),
+          startDay: nextStartDay,
+          dayCount: fertileDays,
+        ),
+      );
+      nextStartDay += fertileDays;
+    }
+
+    if (postFertileDays > 0) {
+      segments.add(
+        _PhaseSegment(
+          title: 'Dinlenme / PMS',
+          description: 'Regl öncesi sakinleşme ve dinlenme evresi.',
+          emoji: '💤',
+          materialIcon: Icons.bedtime_rounded,
+          color: const Color(0xFFB9A6E8),
+          startDay: nextStartDay,
+          dayCount: postFertileDays,
+        ),
+      );
+    }
+
+    return _CyclePhaseLayout(segments);
+  }
+}
+
 class _CycleRingPainter extends CustomPainter {
   final int cycleDay;
   final int cycleLength;
@@ -441,11 +508,6 @@ class _CycleRingPainter extends CustomPainter {
       radius: radius,
     );
 
-    const menstruationColor = Color(0xFFE56B8A);
-    const renewalColor = Color(0xFF8BCF9B);
-    const fertileColor = Color(0xFFF4C95D);
-    const restColor = Color(0xFFB9A6E8);
-
     final backgroundPaint = Paint()
       ..color = const Color(0xFFF1EDF7)
       ..style = PaintingStyle.stroke
@@ -458,18 +520,10 @@ class _CycleRingPainter extends CustomPainter {
       backgroundPaint,
     );
 
-    final menstruationDays = periodLength.clamp(1, safeCycleLength);
-    const fertileDays = 6;
-
-    final renewalDays = math.max(
-      1,
-      safeCycleLength - menstruationDays - fertileDays - 10,
-    ).toInt();
-
-    final restDays = math.max(
-      1,
-      safeCycleLength - menstruationDays - fertileDays - renewalDays,
-    ).toInt();
+    final layout = _CyclePhaseLayout.create(
+      cycleLength: safeCycleLength,
+      periodLength: periodLength,
+    );
 
     double start = -math.pi / 2;
 
@@ -482,7 +536,6 @@ class _CycleRingPainter extends CustomPainter {
       }
 
       final sweep = (days / safeCycleLength) * math.pi * 2;
-
       final phasePaint = Paint()
         ..color = color
         ..style = PaintingStyle.stroke
@@ -492,10 +545,7 @@ class _CycleRingPainter extends CustomPainter {
       canvas.drawArc(
         rect,
         start + gap,
-        math.max(
-          0,
-          sweep - gap * 2,
-        ),
+        math.max(0, sweep - gap * 2),
         false,
         phasePaint,
       );
@@ -503,25 +553,12 @@ class _CycleRingPainter extends CustomPainter {
       start += sweep;
     }
 
-    drawPhase(
-      menstruationDays,
-      menstruationColor,
-    );
-
-    drawPhase(
-      renewalDays,
-      renewalColor,
-    );
-
-    drawPhase(
-      fertileDays,
-      fertileColor,
-    );
-
-    drawPhase(
-      restDays,
-      restColor,
-    );
+    for (final phase in layout.segments) {
+      drawPhase(
+        phase.dayCount,
+        phase.color,
+      );
+    }
 
     final safeCycleDay = cycleDay.clamp(1, safeCycleLength);
 
