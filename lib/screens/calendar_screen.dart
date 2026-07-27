@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// Calendar behavior revision: 2026-07-27-v6-editable-end-window
+
 import '../models/cycle_info.dart';
 import '../models/period_record.dart';
 import '../services/cycle_calculator.dart';
@@ -99,26 +101,56 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  bool _isEstimatedDateBeforeFirstRecord(DateTime date) {
-    if (_actualRecords.isEmpty) {
-      return false;
-    }
-
-    final firstStartDate = _actualRecords
-        .map((record) => _dateOnly(record.startDate))
-        .reduce((first, second) => first.isBefore(second) ? first : second);
-
-    final targetDate = _dateOnly(date);
-    final estimatedPreviousStartDate = firstStartDate.subtract(
-      Duration(days: _fallbackCycleLength),
-    );
-
-    return targetDate.isBefore(firstStartDate) &&
-        !targetDate.isBefore(estimatedPreviousStartDate);
-  }
-
   List<PeriodRecord> _actualRecords = [];
   List<PeriodRecord> _predictedRecords = [];
+
+  static const int _maximumPeriodLength = 10;
+
+  int get _defaultUnfinishedPeriodLength {
+    final predictedLength = CycleCalculator.calculatePredictedPeriodLength(
+      records: _actualRecords,
+      fallbackPeriodLength: _fallbackPeriodLength,
+    );
+
+    return predictedLength.clamp(1, _maximumPeriodLength).toInt();
+  }
+
+  /// Finds the nearest period that may use [date] as its real end date.
+  ///
+  /// The user can correct an automatically estimated end date by selecting
+  /// any day from the period start through the tenth day. A later period
+  /// always takes priority, so records are never extended across another
+  /// period start.
+  PeriodRecord? _findPeriodEndCandidate(DateTime date) {
+    final targetDate = _dateOnly(date);
+    final sortedRecords = [..._actualRecords]
+      ..sort((a, b) => b.startDate.compareTo(a.startDate));
+
+    for (final record in sortedRecords) {
+      final startDate = _dateOnly(record.startDate);
+      final dayNumber = targetDate.difference(startDate).inDays + 1;
+
+      if (dayNumber < 1 || dayNumber > _maximumPeriodLength) {
+        continue;
+      }
+
+      final hasLaterRecordBeforeOrOnTarget = _actualRecords.any((other) {
+        if (identical(other, record)) {
+          return false;
+        }
+
+        final otherStartDate = _dateOnly(other.startDate);
+        return otherStartDate.isAfter(startDate) &&
+            !otherStartDate.isAfter(targetDate);
+      });
+
+      if (!hasLaterRecordBeforeOrOnTarget) {
+        return record;
+      }
+    }
+
+    return null;
+  }
 
   int _fallbackPeriodLength = 4;
   int _fallbackCycleLength = 28;
@@ -589,6 +621,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildSelectedDayCard() {
+    final today = _dateOnly(DateTime.now());
+    final selectedDate = _dateOnly(_selectedDate);
+    final isFutureDate = selectedDate.isAfter(today);
+
     final ongoingRecord = _actualRecords
         .where((record) => record.isOngoing)
         .cast<PeriodRecord?>()
@@ -597,34 +633,47 @@ class _CalendarScreenState extends State<CalendarScreen> {
           orElse: () => null,
         );
 
-    final canFinishOngoingPeriod = ongoingRecord != null &&
-        !_dateOnly(_selectedDate).isBefore(
-          _dateOnly(ongoingRecord.startDate),
-        );
-
     final actualRecord = CycleCalculator.findActualRecordForDate(
-      date: _selectedDate,
+      date: selectedDate,
       records: _actualRecords,
     );
+
+    final periodEndCandidate = actualRecord == null
+        ? _findPeriodEndCandidate(selectedDate)
+        : null;
 
     final isActualPeriodDay = actualRecord != null;
 
     final isPredictedPeriodDay = !isActualPeriodDay &&
         CycleCalculator.isPredictedPeriodDay(
-          date: _selectedDate,
+          date: selectedDate,
           predictedRecords: _predictedRecords,
         );
 
-    String statusText = '';
+    String statusText;
     Widget phaseLeadingWidget;
 
-    if (isActualPeriodDay) {
+    if (actualRecord != null) {
       final dayNumber =
-          _selectedDate.difference(actualRecord.startDate).inDays + 1;
+          selectedDate.difference(_dateOnly(actualRecord.startDate)).inDays + 1;
+
       statusText = 'Gerçek regl · $dayNumber. gün';
       phaseLeadingWidget = const Icon(
         Icons.water_drop_rounded,
         color: Color(0xFFD9577D),
+        size: 28,
+      );
+    } else if (periodEndCandidate != null) {
+      final dayNumber = selectedDate
+              .difference(_dateOnly(periodEndCandidate.startDate))
+              .inDays +
+          1;
+
+      statusText =
+          '${_formatDate(periodEndCandidate.startDate)} başlangıçlı regl · $dayNumber. gün olarak bitirilebilir';
+      phaseLeadingWidget = const Icon(
+        Icons.check_circle_outline_rounded,
+        color: Color(0xFF7657A8),
         size: 28,
       );
     } else if (isPredictedPeriodDay) {
@@ -635,25 +684,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
         size: 28,
       );
     } else {
-      final cycleInfo = _getCycleInfoForDate(_selectedDate);
+      final cycleInfo = _getCycleInfoForDate(selectedDate);
 
       if (cycleInfo != null) {
         final isOvulation = CycleCalculator.isOvulationDay(
-          date: _selectedDate,
+          date: selectedDate,
           cycleInfo: cycleInfo,
         );
 
         final cycleResult = CycleCalculator.calculate(
           cycleInfo,
-          currentDate: _selectedDate,
+          currentDate: selectedDate,
         );
-
-        const estimatedPrefix = 'Tahmini ';
 
         if (isOvulation) {
           statusText =
-              '${cycleResult.cycleDay}. gün · ${estimatedPrefix}yumurtlama günü';
-          phaseLeadingWidget = const Text('👑', style: TextStyle(fontSize: 24));
+              '${cycleResult.cycleDay}. gün · Tahmini yumurtlama günü';
+          phaseLeadingWidget = const Text(
+            '👑',
+            style: TextStyle(fontSize: 24),
+          );
         } else {
           statusText =
               '${cycleResult.cycleDay}. gün · ${_estimatedPhaseName(cycleResult.phaseName)}';
@@ -664,8 +714,297 @@ class _CalendarScreenState extends State<CalendarScreen> {
         }
       } else {
         statusText = 'Kayıt yok';
-        phaseLeadingWidget = const Text('📅', style: TextStyle(fontSize: 24));
+        phaseLeadingWidget = const Text(
+          '📅',
+          style: TextStyle(fontSize: 24),
+        );
       }
+    }
+
+    final Widget actionSection;
+
+    if (isFutureDate) {
+      actionSection = Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 11,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3EFF8),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Row(
+          children: [
+            Icon(
+              Icons.lock_clock_outlined,
+              size: 18,
+              color: Color(0xFF7657A8),
+            ),
+            SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                'Gelecek tarihler yalnızca tahminleri görüntülemek içindir. Bu tarihlere regl kaydı eklenemez.',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFF655A70),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (actualRecord != null) {
+      // A date that already belongs to a real period can never start another
+      // period. Only end-date editing/removal actions are shown here.
+      if (actualRecord.isOngoing) {
+        actionSection = Column(
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: FilledButton.icon(
+                onPressed: _isSaving ? null : _finishCurrentPeriod,
+                icon: const Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Reglim Bitti',
+                  style: TextStyle(fontSize: 13),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF7657A8),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: OutlinedButton.icon(
+                onPressed: _isSaving
+                    ? null
+                    : () => _confirmRemoveRecord(actualRecord),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Regl kaydını kaldır',
+                  style: TextStyle(fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFC74469),
+                  side: const BorderSide(
+                    color: Color(0xFFE4A2B5),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      } else {
+        actionSection = Column(
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: FilledButton.icon(
+                onPressed: _isSaving
+                    ? null
+                    : () => _confirmUpdatePeriodEnd(
+                          actualRecord,
+                          selectedDate,
+                        ),
+                icon: const Icon(
+                  Icons.check_circle_outline_rounded,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Son regl günüm',
+                  style: TextStyle(fontSize: 13),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF7657A8),
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: OutlinedButton.icon(
+                onPressed: _isSaving
+                    ? null
+                    : () => _confirmRemoveRecord(actualRecord),
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Regl kaydını kaldır',
+                  style: TextStyle(fontSize: 13),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFC74469),
+                  side: const BorderSide(
+                    color: Color(0xFFE4A2B5),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+    } else if (periodEndCandidate != null) {
+      actionSection = Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3EFF8),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              '${_formatDate(periodEndCandidate.startDate)} tarihinde başlayan regl kaydının bitişini bu tarihe uzatabilirsin. Aradaki günler de gerçek regl günü olarak işaretlenecek.',
+              style: const TextStyle(
+                fontSize: 12.5,
+                height: 1.35,
+                color: Color(0xFF655A70),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: FilledButton.icon(
+              onPressed: _isSaving
+                  ? null
+                  : () => _confirmUpdatePeriodEnd(
+                        periodEndCandidate,
+                        selectedDate,
+                      ),
+              icon: const Icon(
+                Icons.check_circle_outline_rounded,
+                size: 18,
+              ),
+              label: const Text(
+                'Son regl günüm',
+                style: TextStyle(fontSize: 13),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7657A8),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (ongoingRecord != null) {
+      final ongoingStartDate = _dateOnly(ongoingRecord.startDate);
+      final isBeforeOngoingPeriod = selectedDate.isBefore(ongoingStartDate);
+
+      actionSection = Column(
+        children: [
+          if (!isBeforeOngoingPeriod) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7E8),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFFF2D8A6),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 19,
+                    color: Color(0xFFD58A24),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      'Önceki regl kaydının bitişi girilmemiş. Yeni kayıt eklenirse önceki kayıt otomatik olarak $_defaultUnfinishedPeriodLength gün kabul edilecek.',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        height: 1.35,
+                        color: Color(0xFF66533A),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: FilledButton.icon(
+              onPressed: _isSaving ? null : _handleStartPeriod,
+              icon: Icon(
+                isBeforeOngoingPeriod
+                    ? Icons.history_rounded
+                    : Icons.add_circle_outline,
+                size: 18,
+              ),
+              label: Text(
+                isBeforeOngoingPeriod
+                    ? 'Geçmiş Regl Kaydı Ekle'
+                    : selectedDate.isBefore(today)
+                        ? 'Geçmiş Regl Kaydı Ekle'
+                        : 'Yeni Regl Başlat',
+                style: const TextStyle(fontSize: 13),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7657A8),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      actionSection = SizedBox(
+        height: 40,
+        child: FilledButton.icon(
+          onPressed: _isSaving ? null : _handleStartPeriod,
+          icon: _isSaving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Icon(
+                  selectedDate.isBefore(today)
+                      ? Icons.history_rounded
+                      : Icons.water_drop_outlined,
+                  size: 18,
+                ),
+          label: Text(
+            selectedDate.isBefore(today)
+                ? 'Geçmiş Regl Kaydı Ekle'
+                : 'Regl Başladı',
+            style: const TextStyle(fontSize: 13),
+          ),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF7657A8),
+            foregroundColor: Colors.white,
+          ),
+        ),
+      );
     }
 
     return Container(
@@ -698,7 +1037,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${_selectedDate.day} ${_monthNames[_selectedDate.month - 1]} ${_selectedDate.year}',
+                      '${selectedDate.day} ${_monthNames[selectedDate.month - 1]} ${selectedDate.year}',
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -719,183 +1058,135 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: canFinishOngoingPeriod
-                ? Column(
-                    children: [
-                      SizedBox(
-                        width: double.infinity,
-                        height: 40,
-                        child: FilledButton.icon(
-                          onPressed: _isSaving ? null : _finishCurrentPeriod,
-                          icon: const Icon(Icons.check_circle_outline, size: 18),
-                          label: const Text('Reglim Bitti', style: TextStyle(fontSize: 13)),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF7657A8),
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 40,
-                              child: OutlinedButton.icon(
-                                onPressed: _isSaving ? null : _handleStartPeriod,
-                                icon: const Icon(Icons.add_circle_outline, size: 16),
-                                label: const Text('Regl Başlat', style: TextStyle(fontSize: 12)),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFF7657A8),
-                                  side: const BorderSide(color: Color(0xFFB8A4D6)),
-                                  padding: EdgeInsets.zero,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: SizedBox(
-                              height: 40,
-                              child: OutlinedButton.icon(
-                                onPressed: _isSaving
-                                    ? null
-                                    : () => _confirmRemoveRecord(actualRecord ?? ongoingRecord),
-                                icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                                label: const Text('Kaydı Kaldır', style: TextStyle(fontSize: 12)),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFFC74469),
-                                  side: const BorderSide(color: Color(0xFFE4A2B5)),
-                                  padding: EdgeInsets.zero,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  )
-                : isActualPeriodDay
-                    ? Column(
-                        children: [
-                          if (!_isSameDay(
-                            _selectedDate,
-                            actualRecord.effectiveEndDate,
-                          )) ...[
-                            SizedBox(
-                              width: double.infinity,
-                              height: 40,
-                              child: FilledButton.icon(
-                                onPressed: _isSaving
-                                    ? null
-                                    : () => _confirmUpdatePeriodEnd(
-                                          actualRecord,
-                                          _selectedDate,
-                                        ),
-                                icon: const Icon(
-                                  Icons.check_circle_outline_rounded,
-                                  size: 18,
-                                ),
-                                label: const Text(
-                                  'Son regl günüm',
-                                  style: TextStyle(fontSize: 13),
-                                ),
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFF7657A8),
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          SizedBox(
-                            width: double.infinity,
-                            height: 40,
-                            child: OutlinedButton.icon(
-                              onPressed: _isSaving
-                                  ? null
-                                  : () => _confirmRemoveRecord(actualRecord),
-                              icon: const Icon(
-                                Icons.delete_outline_rounded,
-                                size: 18,
-                              ),
-                              label: const Text(
-                                'Regl kaydını kaldır',
-                                style: TextStyle(fontSize: 13),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFFC74469),
-                                side: const BorderSide(
-                                  color: Color(0xFFE4A2B5),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : SizedBox(
-                        height: 40,
-                        child: FilledButton.icon(
-                          onPressed: _isSaving ? null : _handleStartPeriod,
-                          icon: _isSaving
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.water_drop_outlined, size: 18),
-                          label: const Text('Regl Başladı', style: TextStyle(fontSize: 13)),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF7657A8),
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-          ),
+          actionSection,
         ],
       ),
     );
   }
 
   Future<void> _handleStartPeriod() async {
-    final ongoingRecords =
-        _actualRecords.where((record) => record.isOngoing).toList();
-
-    if (ongoingRecords.isEmpty) {
-      await _confirmAddRecord();
-      return;
-    }
-
-    final ongoingRecord = ongoingRecords.first;
+    final today = _dateOnly(DateTime.now());
     final selectedDate = _dateOnly(_selectedDate);
-    final ongoingStartDate = _dateOnly(ongoingRecord.startDate);
 
-    if (selectedDate.isBefore(ongoingStartDate)) {
+    if (selectedDate.isAfter(today)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Yeni regl başlangıcı, devam eden kaydın başlangıcından önce olamaz.',
-          ),
+          content: Text('Gelecek tarihler için regl kaydı eklenemez.'),
         ),
       );
       return;
     }
 
-    final shouldProceed = await showDialog<bool>(
+    final recordOnSelectedDate = CycleCalculator.findActualRecordForDate(
+      date: selectedDate,
+      records: _actualRecords,
+    );
+
+    if (recordOnSelectedDate != null) {
+      final dayNumber = selectedDate
+              .difference(_dateOnly(recordOnSelectedDate.startDate))
+              .inDays +
+          1;
+
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Bu tarih zaten regl günün'),
+            content: Text(
+              '${_formatDate(recordOnSelectedDate.startDate)} tarihinde başlayan '
+              'regl kaydının $dayNumber. gününü seçtin. Bu günlerin içine yeni '
+              'bir regl başlangıcı eklenemez.',
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Tamam'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
+    final ongoingRecords =
+        _actualRecords.where((record) => record.isOngoing).toList();
+
+    if (ongoingRecords.isNotEmpty) {
+      final ongoingRecord = ongoingRecords.first;
+      final ongoingStartDate = _dateOnly(ongoingRecord.startDate);
+
+      if (selectedDate.isBefore(ongoingStartDate)) {
+        // A historical period before the current ongoing period is stored as
+        // a completed 4-day record. The ongoing record is not changed.
+        await _confirmAddHistoricalRecord();
+        return;
+      }
+
+      // The selected date is after the ongoing period's default 4-day range.
+      // Complete the old record as 4 days and create the selected record.
+      final selectedIsHistorical = selectedDate.isBefore(today);
+      final shouldProceed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Bitişi girilmemiş regl kaydı var'),
+            content: Text(
+              '${_formatDate(ongoingStartDate)} tarihinde başlayan önceki kayıt '
+              'otomatik olarak $_defaultUnfinishedPeriodLength gün kabul edilecek.\n\n'
+              '${_formatDate(selectedDate)} tarihindeki yeni kayıt '
+              '${selectedIsHistorical ? 'de $_defaultUnfinishedPeriodLength günlük geçmiş kayıt olarak eklenecek.' : 'devam eden regl olarak başlatılacak.'}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Vazgeç'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF7657A8),
+                ),
+                child: const Text('Onayla'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldProceed == true) {
+        await _resolveOngoingPeriodAndStartNew();
+      }
+      return;
+    }
+
+    if (selectedDate.isBefore(today)) {
+      // Every period entered for a past date is completed automatically as
+      // four days. It never becomes the current ongoing period.
+      await _confirmAddHistoricalRecord();
+      return;
+    }
+
+    await _confirmAddRecord();
+  }
+
+  Future<void> _confirmAddHistoricalRecord() async {
+    final selectedDate = _dateOnly(_selectedDate);
+    final endDate = selectedDate.add(
+      Duration(days: _defaultUnfinishedPeriodLength - 1),
+    );
+
+    final shouldAdd = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Devam eden regl kaydı var'),
+          title: const Text('Geçmiş regl kaydı eklensin mi?'),
           content: Text(
-            '${_formatDate(ongoingStartDate)} tarihinde başlayan ve henüz bitişi girilmemiş '
-            'bir kaydın bulunuyor.\n\n'
-            'Yeni regl başlatıldığında, önceki kaydın süresi varsayılan olarak 4 gün kabul edilip '
-            'kapatılacak ve yeni döngün kaydedilecektir. Onaylıyor musun?',
+            'Başlangıç: ${_formatDate(selectedDate)}\n'
+            'Bitiş: ${_formatDate(endDate)}\n\n'
+            'Bu geçmiş kayıt için regl süresi otomatik olarak '
+            '$_defaultUnfinishedPeriodLength gün kabul edilecek. Mevcut diğer regl kayıtların değişmeyecek.',
           ),
           actions: [
             TextButton(
@@ -907,46 +1198,193 @@ class _CalendarScreenState extends State<CalendarScreen> {
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF7657A8),
               ),
-              child: const Text('Onayla ve Başlat'),
+              child: const Text('Kaydı Ekle'),
             ),
           ],
         );
       },
     );
 
-    if (shouldProceed != true) return;
+    if (shouldAdd != true) {
+      return;
+    }
 
-    await _resolveOngoingPeriodAndStartNew();
+    await _addHistoricalRecord();
   }
 
-  Future<void> _resolveOngoingPeriodAndStartNew() async {
+  Future<void> _addHistoricalRecord() async {
+    final selectedDate = _dateOnly(_selectedDate);
+    final endDate = selectedDate.add(
+      Duration(days: _defaultUnfinishedPeriodLength - 1),
+    );
+
+    final overlapsExistingRecord = _actualRecords.any((record) {
+      final existingStart = _dateOnly(record.startDate);
+      final existingEnd = _dateOnly(record.effectiveEndDate);
+
+      return !endDate.isBefore(existingStart) &&
+          !selectedDate.isAfter(existingEnd);
+    });
+
+    if (overlapsExistingRecord) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bu tarih aralığı başka bir regl kaydıyla çakışıyor.',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
 
     try {
-      final ongoingRecord = _actualRecords.firstWhere((r) => r.isOngoing);
-      final defaultPeriodLen = ongoingRecord.periodLength > 0 ? ongoingRecord.periodLength : 4;
-      final calculatedEndDate = ongoingRecord.startDate.add(Duration(days: defaultPeriodLen - 1));
-
-      await StorageService.finishOngoingPeriod(calculatedEndDate);
-
-      await StorageService.startPeriod(
-        _selectedDate,
-        predictedLength: 4,
+      await StorageService.addPeriodRecord(
+        PeriodRecord(
+          startDate: selectedDate,
+          endDate: endDate,
+          predictedLength: _defaultUnfinishedPeriodLength,
+        ),
       );
 
       await _loadCalendarData(showLoading: false);
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Önceki kayıt 4 gün olarak tamamlandı ve yeni regl başlatıldı.'),
+        SnackBar(
+          content: Text(
+            '${_formatDate(selectedDate)} tarihli geçmiş regl kaydı $_defaultUnfinishedPeriodLength gün olarak eklendi.',
+          ),
         ),
       );
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Geçmiş regl kaydı eklenemedi.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _resolveOngoingPeriodAndStartNew() async {
+    final today = _dateOnly(DateTime.now());
+    final selectedDate = _dateOnly(_selectedDate);
+
+    if (selectedDate.isAfter(today)) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final records = await StorageService.getPeriodRecords();
+      final ongoingIndex = records.indexWhere((record) => record.isOngoing);
+
+      if (ongoingIndex == -1) {
+        throw StateError('NO_ONGOING_PERIOD');
+      }
+
+      final ongoingRecord = records[ongoingIndex];
+      final ongoingStartDate = _dateOnly(ongoingRecord.startDate);
+      final calculatedEndDate = ongoingStartDate.add(
+        Duration(days: _defaultUnfinishedPeriodLength - 1),
+      );
+
+      if (!selectedDate.isAfter(calculatedEndDate)) {
+        throw StateError('NEW_START_OVERLAPS_ONGOING_PERIOD');
+      }
+
+      records[ongoingIndex] = PeriodRecord(
+        startDate: ongoingStartDate,
+        endDate: calculatedEndDate,
+        predictedLength: ongoingRecord.predictedLength,
+      );
+
+      final selectedIsHistorical = selectedDate.isBefore(today);
+      final newRecordEndDate = selectedIsHistorical
+          ? selectedDate.add(
+              Duration(days: _defaultUnfinishedPeriodLength - 1),
+            )
+          : null;
+      final newRecordEffectiveEndDate = newRecordEndDate ??
+          selectedDate.add(
+            Duration(days: _defaultUnfinishedPeriodLength - 1),
+          );
+
+      final overlapsExistingRecord = records.any((record) {
+        final existingStart = _dateOnly(record.startDate);
+        final existingEnd = _dateOnly(record.effectiveEndDate);
+
+        return !newRecordEffectiveEndDate.isBefore(existingStart) &&
+            !selectedDate.isAfter(existingEnd);
+      });
+
+      if (overlapsExistingRecord) {
+        throw StateError('NEW_RECORD_OVERLAPS_EXISTING_PERIOD');
+      }
+
+      records.add(
+        PeriodRecord(
+          startDate: selectedDate,
+          endDate: newRecordEndDate,
+          predictedLength: _defaultUnfinishedPeriodLength,
+        ),
+      );
+
+      // Save the completed old record and the new record together. This avoids
+      // leaving the old record closed if creating the new one fails midway.
+      await StorageService.savePeriodRecords(records);
+      await _loadCalendarData(showLoading: false);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            selectedIsHistorical
+                ? 'Önceki kayıt $_defaultUnfinishedPeriodLength gün olarak tamamlandı ve yeni geçmiş kayıt da $_defaultUnfinishedPeriodLength gün olarak eklendi.'
+                : 'Önceki kayıt $_defaultUnfinishedPeriodLength gün olarak tamamlandı ve yeni regl başlatıldı.',
+          ),
+        ),
+      );
+    } on StateError catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = error.message == 'NEW_START_OVERLAPS_ONGOING_PERIOD' ||
+              error.message == 'NEW_RECORD_OVERLAPS_EXISTING_PERIOD'
+          ? 'Seçilen tarih mevcut bir regl kaydının $_defaultUnfinishedPeriodLength günlük aralığıyla çakışıyor.'
+          : 'Yeni regl başlangıcı kaydedilemedi.';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Yeni regl başlangıcı kaydedilemedi.'),
@@ -962,7 +1400,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<void> _confirmAddRecord() async {
-    const defaultPredictedLength = 4;
+    final selectedDate = _dateOnly(_selectedDate);
+
+    if (selectedDate.isAfter(_dateOnly(DateTime.now()))) {
+      return;
+    }
 
     final shouldAdd = await showDialog<bool>(
       context: context,
@@ -970,8 +1412,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
         return AlertDialog(
           title: const Text('🌙 Yeni Döngü'),
           content: Text(
-            '${_formatDate(_selectedDate)} tarihinde regl başladığını onaylıyor musun?\n\n'
-            'Luna şimdilik 4 günlük geçici bir kayıt oluşturacak.',
+            '${_formatDate(selectedDate)} tarihinde regl başladığını onaylıyor musun?\n\n'
+            'Luna şimdilik $_defaultUnfinishedPeriodLength günlük geçici bir kayıt oluşturacak.',
           ),
           actions: [
             TextButton(
@@ -987,31 +1429,48 @@ class _CalendarScreenState extends State<CalendarScreen> {
       },
     );
 
-    if (shouldAdd != true) return;
+    if (shouldAdd != true) {
+      return;
+    }
 
-    await _addPeriodRecord(periodLength: defaultPredictedLength);
+    await _addPeriodRecord(
+      periodLength: _defaultUnfinishedPeriodLength,
+    );
   }
 
   Future<void> _addPeriodRecord({required int periodLength}) async {
+    final selectedDate = _dateOnly(_selectedDate);
+
+    if (selectedDate.isAfter(_dateOnly(DateTime.now()))) {
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
 
     try {
       await StorageService.startPeriod(
-        _selectedDate,
+        selectedDate,
         predictedLength: periodLength,
       );
 
       await _loadCalendarData(showLoading: false);
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Regl başlangıcı kaydedildi.')),
+        const SnackBar(
+          content: Text('Regl başlangıcı kaydedildi.'),
+        ),
       );
     } on StateError catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       final message = error.message == 'An ongoing period already exists.'
           ? 'Devam eden bir regl kaydı zaten var.'
           : 'Bu tarih için zaten bir regl kaydı bulunuyor.';
@@ -1020,9 +1479,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
         SnackBar(content: Text(message)),
       );
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Regl başlangıcı kaydedilemedi.')),
+        const SnackBar(
+          content: Text('Regl başlangıcı kaydedilemedi.'),
+        ),
       );
     } finally {
       if (mounted) {
@@ -1034,13 +1498,53 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Future<void> _finishCurrentPeriod() async {
+    final selectedDate = _dateOnly(_selectedDate);
+
+    if (selectedDate.isAfter(_dateOnly(DateTime.now()))) {
+      return;
+    }
+
     setState(() {
       _isSaving = true;
     });
 
     try {
-      await StorageService.finishOngoingPeriod(_selectedDate);
+      await StorageService.finishOngoingPeriod(selectedDate);
       await _loadCalendarData(showLoading: false);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Regl bitiş tarihi ${_formatDate(selectedDate)} olarak kaydedildi.',
+          ),
+        ),
+      );
+    } on StateError catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = error.message == 'ONGOING_PERIOD_TOO_LONG'
+          ? 'Regl süresi $_maximumPeriodLength günden uzun kaydedilemez. Yeni regl başlat seçeneğini kullanabilirsin.'
+          : 'Regl bitiş tarihi kaydedilemedi.';
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Regl bitiş tarihi kaydedilemedi.'),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -1058,9 +1562,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Regl bitiş tarihi güncellensin mi?'),
+          title: const Text('Son regl günün kaydedilsin mi?'),
           content: Text(
-            'Yeni bitiş tarihi:\n${_formatDate(selectedDate)}',
+            'Son regl günü: ${_formatDate(selectedDate)}\n'
+            'Toplam süre: ${_dateOnly(selectedDate).difference(_dateOnly(record.startDate)).inDays + 1} gün\n\n'
+            'Bu süre gerçek regl süren olarak kaydedilecek ve sonraki tahminlerde kullanılacak.',
           ),
           actions: [
             TextButton(
@@ -1100,12 +1606,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
       final newPeriodLength =
           normalizedSelectedDate.difference(normalizedStartDate).inDays + 1;
 
-      if (newPeriodLength < 1 || newPeriodLength > 15) {
+      if (newPeriodLength < 1 ||
+          newPeriodLength > _maximumPeriodLength) {
         throw StateError('INVALID_PERIOD_LENGTH');
       }
 
       final updatedRecord = record.copyWith(
         endDate: normalizedSelectedDate,
+        predictedLength: newPeriodLength,
       );
 
       final updated = await StorageService.updatePeriodRecord(
@@ -1126,7 +1634,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Regl bitiş tarihi ${_formatDate(normalizedSelectedDate)} olarak güncellendi.',
+            'Son regl günün ${_formatDate(normalizedSelectedDate)} olarak kaydedildi. Regl süren $newPeriodLength gün.',
           ),
         ),
       );
@@ -1136,7 +1644,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       final message = error.message == 'INVALID_PERIOD_LENGTH'
-          ? 'Regl süresi 1 ile 15 gün arasında olmalıdır.'
+          ? 'Regl süresi 1 ile $_maximumPeriodLength gün arasında olmalıdır.'
           : 'Regl bitiş tarihi güncellenemedi.';
 
       ScaffoldMessenger.of(context).showSnackBar(

@@ -200,7 +200,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Luna’ya hoş geldin',
+              'Merhaba',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
@@ -209,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Döngün',
+              'Bugünkü Döngün',
               style: TextStyle(
                 fontSize: 16,
                 color: Color(0xFF77707E),
