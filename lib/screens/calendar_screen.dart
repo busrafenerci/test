@@ -58,7 +58,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   /// Returns cycle information for a calendar date.
   ///
-  /// For dates before the first saved period, Luna creates one estimated
+  /// For dates before the first saved period, Within creates one estimated
   /// previous cycle so PMS, fertile and ovulation days can still be shown.
   CycleInfo? _getCycleInfoForDate(DateTime date) {
     final relevantRecord = _findLastRecordBefore(date);
@@ -1413,7 +1413,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           title: const Text('🌙 Yeni Döngü'),
           content: Text(
             '${_formatDate(selectedDate)} tarihinde regl başladığını onaylıyor musun?\n\n'
-            'Luna şimdilik $_defaultUnfinishedPeriodLength günlük geçici bir kayıt oluşturacak.',
+            'W şimdilik $_defaultUnfinishedPeriodLength günlük geçici bir kayıt oluşturacak.',
           ),
           actions: [
             TextButton(

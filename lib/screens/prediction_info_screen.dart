@@ -46,7 +46,7 @@ class PredictionInfoScreen extends StatelessWidget {
               SizedBox(height: 10),
               _InfoParagraph(
                 text:
-                    'Luna, girdiğin regl başlangıç ve bitiş kayıtlarını kullanarak döngü uzunluğunu ve regl süresini tahmin eder. Yeterli kayıt bulunmadığında, ayarlarda seçtiğin varsayılan değerler ve genel döngü hesaplama yöntemleri kullanılır.',
+                    'Within, girdiğin regl başlangıç ve bitiş kayıtlarını kullanarak döngü uzunluğunu ve regl süresini tahmin eder. Yeterli kayıt bulunmadığında, ayarlarda seçtiğin varsayılan değerler ve genel döngü hesaplama yöntemleri kullanılır.',
               ),
               SizedBox(height: 24),
               _InfoHeading(title: 'Hangi bilgiler tahminidir?'),
@@ -69,7 +69,7 @@ class PredictionInfoScreen extends StatelessWidget {
               SizedBox(height: 10),
               _InfoParagraph(
                 text:
-                    'Luna tıbbi tanı koymaz, tedavi önermez ve doktor değerlendirmesinin yerine geçmez. Döngünde olağan dışı veya seni endişelendiren bir değişiklik varsa bir sağlık uzmanına danışmalısın.',
+                    'Within tıbbi tanı koymaz, tedavi önermez ve doktor değerlendirmesinin yerine geçmez. Döngünde olağan dışı veya seni endişelendiren bir değişiklik varsa bir sağlık uzmanına danışmalısın.',
               ),
             ],
           ),

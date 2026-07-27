@@ -239,22 +239,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final ovulationDay = cycleInfo.cycleLength - 14;
 
     if (result.phase == CyclePhase.menstruation) {
-      return 'assets/images/luna_home_period.png';
+      return 'assets/images/Within_home_period.png';
     }
 
     if (result.cycleDay == ovulationDay) {
-      return 'assets/images/luna_home_ovulation.png';
+      return 'assets/images/Within_home_ovulation.png';
     }
 
     if (result.phase == CyclePhase.fertile) {
-      return 'assets/images/luna_home_fertile.png';
+      return 'assets/images/Within_home_fertile.png';
     }
 
     if (result.phase == CyclePhase.pms) {
-      return 'assets/images/luna_home_pms.png';
+      return 'assets/images/Within_home_pms.png';
     }
 
-    return 'assets/images/luna_home_default.png';
+    return 'assets/images/Within_home_default.png';
   }
 
   Widget _buildCycleCard(

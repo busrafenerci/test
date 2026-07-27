@@ -248,7 +248,7 @@ class _SetupScreenState extends State<SetupScreen>
                             SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Luna tarafından gösterilen regl, PMS, doğurgan dönem ve yumurtlama tarihleri tahminidir. Tıbbi tavsiye yerine geçmez ve gebelikten korunma yöntemi olarak kullanılmamalıdır.',
+                                'Within tarafından gösterilen regl, PMS, doğurgan dönem ve yumurtlama tarihleri tahminidir. Tıbbi tavsiye yerine geçmez ve gebelikten korunma yöntemi olarak kullanılmamalıdır.',
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   height: 1.35,
@@ -478,14 +478,14 @@ class _SetupHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        const _LunaHeaderPortrait(),
+        const _WithinHeaderPortrait(),
       ],
     );
   }
 }
 
-class _LunaHeaderPortrait extends StatelessWidget {
-  const _LunaHeaderPortrait();
+class _WithinHeaderPortrait extends StatelessWidget {
+  const _WithinHeaderPortrait();
 
   @override
   Widget build(BuildContext context) {
@@ -505,7 +505,7 @@ class _LunaHeaderPortrait extends StatelessWidget {
             ),
           ),
           child: Image.asset(
-            'assets/images/luna_head.png',
+            'assets/images/Within_head.png',
             fit: BoxFit.cover,
             alignment: Alignment.topCenter,
             filterQuality: FilterQuality.high,

@@ -1,6 +1,6 @@
 # Changelog
 
-Bu dosya, Luna projesinde yapılan önemli değişiklikleri, hata düzeltmelerini ve yeni eklenen özellikleri kronolojik ve yapılandırılmış bir şekilde takip eder.
+Bu dosya, Within projesinde yapılan önemli değişiklikleri, hata düzeltmelerini ve yeni eklenen özellikleri kronolojik ve yapılandırılmış bir şekilde takip eder.
 
 ## [Unreleased] - 2026-07-25
 
@@ -27,7 +27,7 @@ Bu dosya, Luna projesinde yapılan önemli değişiklikleri, hata düzeltmelerin
 ### 🌱 İlk Adımlar
 * Temel Flutter proje yapısı kuruldu.
 * Ana ekran ve takvim ekranı iskeleti oluşturuldu[cite: 4].
-* Mor renk paletiyle Luna tasarım dili belirlendi[cite: 4].
+* Mor renk paletiyle Within tasarım dili belirlendi[cite: 4].
 * Yerel veri saklama altyapısı ve `CycleCalculator` entegrasyonu sağlandı[cite: 4].
 
 # Değişiklik Geçmişi

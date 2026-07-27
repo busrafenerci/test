@@ -42,18 +42,22 @@ class AboutScreen extends StatelessWidget {
           ),
           child: const Column(
             children: [
-              CircleAvatar(
-                radius: 34,
-                backgroundColor: Color(0xFFF0EBFF),
-                child: Icon(
-                  Icons.nightlight_round,
-                  size: 36,
-                  color: _primaryPurple,
-                ),
-              ),
+              ClipRRect(
+  borderRadius: BorderRadius.all(
+    Radius.circular(18),
+  ),
+  child: Image(
+    image: AssetImage(
+      'assets/icons/within_app_icon.png',
+    ),
+    width: 68,
+    height: 68,
+    fit: BoxFit.cover,
+  ),
+),
               SizedBox(height: 14),
               Text(
-                'Luna',
+                'Within',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
@@ -70,7 +74,7 @@ class AboutScreen extends StatelessWidget {
               ),
               SizedBox(height: 24),
               Text(
-                'Luna, regl döngülerini kolayca kaydetmeye ve kişisel döngü tahminlerini takip etmeye yardımcı olmak amacıyla geliştirilmiştir.',
+                'Within, regl döngülerini kolayca kaydetmeye ve kişisel döngü tahminlerini takip etmeye yardımcı olmak amacıyla geliştirilmiştir.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,

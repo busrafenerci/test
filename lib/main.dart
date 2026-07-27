@@ -11,17 +11,17 @@ void main() async {
   // SharedPreferences'ın soğuk açılışta gecikmesini önlemek için önbelleğe alıyoruz
   await SharedPreferences.getInstance();
 
-  runApp(const LunaApp());
+  runApp(const WithinApp());
 }
 
-class LunaApp extends StatelessWidget {
-  const LunaApp({super.key});
+class WithinApp extends StatelessWidget {
+  const WithinApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Luna',
+      title: 'W',
       theme: AppTheme.lightTheme,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [

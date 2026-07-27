@@ -145,7 +145,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           child: AnimatedOpacity(
                             opacity: _isLeaving ? 0 : 1,
                             duration: const Duration(milliseconds: 250),
-                            child: _buildLunaArea(
+                            child: _buildWithinArea(
                               height: imageAreaHeight,
                             ),
                           ),
@@ -154,7 +154,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           opacity: _isLeaving ? 0 : 1,
                           duration: const Duration(milliseconds: 250),
                           child: const Text(
-                            'Luna',
+                            'W',
                             style: TextStyle(
                               fontSize: 46,
                               height: 1,
@@ -342,7 +342,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  Widget _buildLunaArea({
+  Widget _buildWithinArea({
     required double height,
   }) {
     return SizedBox(
@@ -352,7 +352,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          // Large soft purple aura behind Luna.
+          // Large soft purple aura behind Within.
           Positioned(
             top: height * 0.04,
             child: Container(
@@ -392,14 +392,14 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             ),
           ),
 
-          // Luna remains completely still.
+          // Within remains completely still.
           Positioned.fill(
             child: ClipRect(
               child: Transform.scale(
                 scale: 1.48,
                 alignment: const Alignment(0, 0.08),
                 child: Image.asset(
-                  'assets/images/luna_default.png',
+                  'assets/images/Within_default.png',
                   fit: BoxFit.contain,
                   alignment: const Alignment(0, 0.08),
                   filterQuality: FilterQuality.high,
@@ -411,7 +411,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   ) {
                     return const Center(
                       child: Text(
-                        'Luna görseli bulunamadı',
+                        'W görseli buWithinmadı',
                         style: TextStyle(
                           color: Color(0xFF6842A5),
                           fontWeight: FontWeight.w600,
@@ -555,7 +555,7 @@ class WelcomeSparklesPainter extends CustomPainter {
       speed: 0.78,
     ),
 
-    // Around Luna's upper body and hair
+    // Around Within's upper body and hair
     _SparkleData(
       position: Offset(0.07, 0.31),
       radius: 2.5,

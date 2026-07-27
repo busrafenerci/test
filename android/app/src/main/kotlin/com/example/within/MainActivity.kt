@@ -1,4 +1,4 @@
-package com.example.dongu_takvimi
+package com.example.within
 
 import io.flutter.embedding.android.FlutterActivity
 

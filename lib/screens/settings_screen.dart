@@ -72,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final selectedValue = await _showNumberPicker(
       title: 'Ortalama döngü aralığı',
       description:
-          'Luna, bir sonraki regl tarihini tahmin ederken bu değeri kullanır.',
+          'Within, bir sonraki regl tarihini tahmin ederken bu değeri kullanır.',
       currentValue: _settings.averageCycleLength,
       minimumValue: 10,
       maximumValue: 60,
@@ -344,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(24),
           ),
           title: const Text(
-            'Luna sıfırlansın mı?',
+            'Within sıfırlansın mı?',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               color: _darkPurple,
@@ -527,11 +527,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const _SettingsDivider(),
                         _SettingsTile(
-                          title: 'Hakkında',
-                          subtitle: 'Luna ve uygulama sürümü',
-                          icon: Icons.nightlight_round,
-                          onTap: _openAbout,
-                        ),
+  title: 'Hakkında',
+  subtitle: 'Within ve uygulama sürümü',
+  assetIconPath: 'assets/icons/within_app_icon.png',
+  onTap: _openAbout,
+),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -628,21 +628,26 @@ class _SettingsSection extends StatelessWidget {
 class _SettingsTile extends StatelessWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
+  final IconData? icon;
   final VoidCallback? onTap;
   final Color? titleColor;
   final Color? iconColor;
   final bool isLoading;
+  final String? assetIconPath;
 
   const _SettingsTile({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.onTap,
-    this.titleColor,
-    this.iconColor,
-    this.isLoading = false,
-  });
+  required this.title,
+  required this.subtitle,
+  required this.onTap,
+  this.icon,
+  this.assetIconPath,
+  this.titleColor,
+  this.iconColor,
+  this.isLoading = false,
+}) : assert(
+       icon != null || assetIconPath != null,
+       'icon veya assetIconPath verilmelidir.',
+     );
 
   @override
   Widget build(BuildContext context) {
@@ -656,12 +661,22 @@ class _SettingsTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              size: 22,
-              color: iconColor ??
-                  _SettingsScreenState._primaryPurple,
-            ),
+            if (assetIconPath != null)
+  ClipRRect(
+    borderRadius: BorderRadius.circular(7),
+    child: Image.asset(
+      assetIconPath!,
+      width: 28,
+      height: 28,
+      fit: BoxFit.cover,
+    ),
+  )
+else
+  Icon(
+    icon,
+    size: 22,
+    color: iconColor ?? _SettingsScreenState._primaryPurple,
+  ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

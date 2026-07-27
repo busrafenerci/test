@@ -46,7 +46,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               SizedBox(height: 10),
               _PrivacyParagraph(
                 text:
-                    'Luna, regl döngünü takip etmene yardımcı olmak amacıyla geliştirilmiştir. Uygulamaya kaydettiğin regl ve döngü bilgileri hassas kişisel verilerdir.',
+                    'Within, regl döngünü takip etmene yardımcı olmak amacıyla geliştirilmiştir. Uygulamaya kaydettiğin regl ve döngü bilgileri hassas kişisel verilerdir.',
               ),
               SizedBox(height: 24),
               _PrivacyHeading(title: 'Hangi veriler kaydedilir?'),
@@ -60,7 +60,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               SizedBox(height: 10),
               _PrivacyParagraph(
                 text:
-                    'Kayıtların yalnızca kendi cihazında yerel olarak saklanır. Luna hesap oluşturmanı istemez ve mevcut sürümde verilerini bir çevrim içi hesaba eşitlemez.',
+                    'Kayıtların yalnızca kendi cihazında yerel olarak saklanır. Within hesap oluşturmanı istemez ve mevcut sürümde verilerini bir çevrim içi hesaba eşitlemez.',
               ),
               SizedBox(height: 24),
               _PrivacyHeading(title: 'İnternet, konum ve hesap'),
@@ -74,7 +74,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               SizedBox(height: 10),
               _PrivacyParagraph(
                 text:
-                    'Luna, kaydettiğin sağlık ve döngü bilgilerini herhangi bir sunucuya göndermez, üçüncü taraflarla paylaşmaz ve reklam amacıyla kullanmaz.',
+                    'Within, kaydettiğin sağlık ve döngü bilgilerini herhangi bir sunucuya göndermez, üçüncü taraflarla paylaşmaz ve reklam amacıyla kullanmaz.',
               ),
               SizedBox(height: 24),
               _PrivacyHeading(title: 'Verilerini nasıl silebilirsin?'),
@@ -88,7 +88,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               SizedBox(height: 10),
               _PrivacyParagraph(
                 text:
-                    'Luna tarafından gösterilen regl, PMS, doğurgan dönem ve yumurtlama tarihleri yaklaşık tahminlerdir. Tahminler, girdiğin kayıtlar, seçtiğin ayarlar ve genel döngü hesaplama yöntemleri temel alınarak oluşturulur. Gerçek tarihler kişiden kişiye ve döngüden döngüye değişebilir.',
+                    'Within tarafından gösterilen regl, PMS, doğurgan dönem ve yumurtlama tarihleri yaklaşık tahminlerdir. Tahminler, girdiğin kayıtlar, seçtiğin ayarlar ve genel döngü hesaplama yöntemleri temel alınarak oluşturulur. Gerçek tarihler kişiden kişiye ve döngüden döngüye değişebilir.',
               ),
               SizedBox(height: 16),
               _PrivacyWarning(),
@@ -97,7 +97,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               SizedBox(height: 10),
               _PrivacyParagraph(
                 text:
-                    'Luna bir tıbbi cihaz değildir; tıbbi tavsiye, teşhis veya tedavi sunmaz. Doktor değerlendirmesinin yerine geçmez. Doğurgan dönem ve yumurtlama tahminleri gebelikten korunmak veya gebelik elde etmek için tek başına kullanılmamalıdır.',
+                    'Within bir tıbbi cihaz değildir; tıbbi tavsiye, teşhis veya tedavi sunmaz. Doktor değerlendirmesinin yerine geçmez. Doğurgan dönem ve yumurtlama tahminleri gebelikten korunmak veya gebelik elde etmek için tek başına kullanılmamalıdır.',
               ),
               SizedBox(height: 24),
               _PrivacyHeading(title: 'Değişiklikler'),

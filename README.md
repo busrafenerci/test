@@ -1,17 +1,17 @@
-# Luna
+# Within
 
-Luna, kadınların menstrual döngülerini sade ve doğal bir akışla takip etmelerine yardımcı olmak için geliştirilen Flutter tabanlı bir mobil uygulamadır.
+Within, kadınların menstrual döngülerini sade ve doğal bir akışla takip etmelerine yardımcı olmak için geliştirilen Flutter tabanlı bir mobil uygulamadır.
 
 > **Takvim tutmaz. Seni tanır.**
 
 ## Projenin amacı
 
-Luna'nın temel amacı, kullanıcıyı karmaşık formlar ve manuel süre girişleriyle uğraştırmadan regl başlangıç ve bitiş tarihlerini kaydetmek, döngü bilgilerini göstermek ve ilerleyen sürümlerde kişiselleştirilmiş içgörüler üretmektir.
+Within'in temel amacı, kullanıcıyı karmaşık formlar ve manuel süre girişleriyle uğraştırmadan regl başlangıç ve bitiş tarihlerini kaydetmek, döngü bilgilerini göstermek ve ilerleyen sürümlerde kişiselleştirilmiş içgörüler üretmektir.
 
 Temel kullanım akışı:
 
 1. Kullanıcı **Regl Başladı** butonuna basar.
-2. Luna geçici bir regl süresi tahminiyle devam eden bir kayıt oluşturur.
+2. Within geçici bir regl süresi tahminiyle devam eden bir kayıt oluşturur.
 3. Kullanıcı regl sona erdiğinde **Reglim Bitti** butonuna basar.
 4. Gerçek regl süresi başlangıç ve bitiş tarihlerinden hesaplanır.
 5. Tamamlanan kayıtlar gelecek döngü tahminlerinde kullanılabilir.
@@ -29,7 +29,7 @@ Bu oran, uygulamanın yayınlanmaya hazır olduğu anlamına gelmez. Temel mimar
 - Flutter proje yapısı oluşturuldu.
 - Ana ekran geliştirildi.
 - Takvim ekranı geliştirildi.
-- Mor ağırlıklı Luna tasarım dili oluşturuldu.
+- Mor ağırlıklı Within tasarım dili oluşturuldu.
 - `StorageService`, `CycleCalculator` ve `PeriodRecord` yapıları oluşturuldu.
 - Gerçek ve tahmini regl günleri takvimde farklı biçimlerde gösterildi.
 
