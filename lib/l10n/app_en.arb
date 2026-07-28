@@ -1,0 +1,481 @@
+{
+  "@@locale": "en",
+  "hello": "Your Cycle Today",
+  "calendar": "Calendar",
+  "settings": "Settings",
+  "periodStartedToday": "My period started today",
+  "periodEnded": "My period ended",
+  "nextPeriod": "Estimated next period",
+  "navHome": "Home",
+  "navCalendar": "Calendar",
+  "navSettings": "Settings",
+  "appStartError": "An error occurred while starting the app.",
+  "tryAgain": "Try Again",
+  "aboutTitle": "About",
+  "aboutVersion": "Version 1.0.0",
+  "aboutDescription": "Within was developed to help you easily record your menstrual cycles and follow your personal cycle predictions.",
+  "developedInTurkey": "Developed in Türkiye.",
+  "contactComingSoon": "The contact address will be added before the app is published.",
+  "welcomeSlogan": "Know your cycle.\nDiscover your strength.",
+  "welcomeContinue": "Continuing...",
+  "welcomeStart": "Get Started",
+  "welcomeImageError": "W image could not be found",
+  "setupTitle": "Let’s Get to Know You",
+  "setupDescription": "Hi, I'm W. I'd like to get to know you a little better so I can support you.",
+  "lastPeriodStart": "Last Period Start",
+  "periodDuration": "Period Duration",
+  "averageCycleDuration": "Average Cycle Length",
+  "dayUnit": "Days",
+  "periodDurationHint": "Select how many days your period usually lasts.",
+  "cycleDurationHint": "The average number of days between the start of two periods.",
+  "setupDisclaimer": "The period, PMS, fertile window, and ovulation dates shown by Within are estimates. They are not medical advice and should not be used as a method of contraception.",
+  "disclaimerAccepted": "I have read and understood this information.",
+  "setupStart": "Start",
+  "setupSaving": "Saving...",
+  "saveFailed": "Couldn't save your information. Please try again.",
+  "month1": "January",
+  "month2": "February",
+  "month3": "March",
+  "month4": "April",
+  "month5": "May",
+  "month6": "June",
+  "month7": "July",
+  "month8": "August",
+  "month9": "September",
+  "month10": "October",
+  "month11": "November",
+  "month12": "December",
+  "averageCycle": "Average Cycle",
+  "daySingular": "Day",
+  "dayPlural": "Days",
+  "privacyTitle": "Privacy Policy",
+  "privacyIntroTitle": "Your privacy matters to us",
+  "privacyIntroText": "Within was developed to help you track your menstrual cycle. The period and cycle information you enter in the app is sensitive personal data.",
+  "privacyCollectedTitle": "What information is stored?",
+  "privacyPeriodDates": "Period start and end dates",
+  "privacyCycleLength": "Average cycle length",
+  "privacyPeriodLength": "Estimated period duration",
+  "privacySetupStatus": "App setup completion status",
+  "privacyStorageTitle": "Where is your information stored?",
+  "privacyStorageText": "Your records are stored locally only on your device. Within does not require you to create an account and does not sync your information with an online account in the current version.",
+  "privacyInternetTitle": "Internet, location, and account",
+  "privacyInternetText": "The current version does not require an internet connection for basic cycle tracking. It does not collect location information or create a user account.",
+  "privacySharingTitle": "Is your information shared?",
+  "privacySharingText": "Within does not send your health or cycle information to any server, share it with third parties, or use it for advertising purposes.",
+  "privacyDeleteTitle": "How can you delete your information?",
+  "privacyDeleteText": "You can permanently delete your period records and app settings stored on your device by selecting “Reset All Data” on the Settings screen. Uninstalling the app may also remove locally stored app data from your device.",
+  "privacyPredictionsTitle": "Predictions and health information",
+  "privacyPredictionsText": "The period, PMS, fertile window, and ovulation dates shown by Within are approximate predictions. They are based on the records you enter, the settings you select, and general cycle calculation methods. Actual dates may vary from person to person and from cycle to cycle.",
+  "privacyWarningText": "Predictions are not a method of contraception and should not be considered reliable on their own for pregnancy planning.",
+  "privacyMedicalTitle": "Medical disclaimer",
+  "privacyMedicalText": "Within is not a medical device and does not provide medical advice, diagnosis, or treatment. It is not a substitute for evaluation by a doctor. Fertile window and ovulation predictions should not be used on their own to prevent or achieve pregnancy.",
+  "privacyChangesTitle": "Changes",
+  "privacyChangesText": "This privacy policy will be updated if new features, online services, analytics, or advertising tools are added to the app. You can access the latest version from the Settings screen.",
+  "privacyFooterText": "In the current version, your information remains on your device and under your control.",
+  "settingsTitle": "Settings",
+  "settingsDescription": "Manage your cycle settings, review privacy information, and control your data.",
+  "settingsCycleSection": "CYCLE",
+  "settingsAverageCycleLength": "Average cycle length",
+  "settingsEstimatedPeriodLength": "Estimated period duration",
+  "settingsInformationSection": "INFORMATION",
+  "settingsPredictionsTitle": "About Predictions",
+  "settingsPredictionsSubtitle": "Learn how your cycle predictions are calculated",
+  "settingsAboutTitle": "About",
+  "settingsAboutSubtitle": "Within and app version",
+  "settingsPrivacySection": "PRIVACY",
+  "settingsPrivacySubtitle": "Learn how your information is stored",
+  "settingsDataSection": "DATA",
+  "settingsResetAllData": "Reset All Data",
+  "settingsResetAllDataSubtitle": "Permanently delete your period history and settings",
+  "settingsCyclePickerTitle": "Average cycle length",
+  "settingsCyclePickerDescription": "Within uses this value when predicting your next period.",
+  "settingsPeriodPickerTitle": "Estimated period duration",
+  "settingsPeriodPickerDescription": "The default duration used for ongoing records and future period predictions.",
+  "settingsSave": "Save",
+  "settingsCancel": "Cancel",
+  "settingsDeleteAll": "Delete All",
+  "settingsResetTitle": "Reset Within?",
+  "settingsResetDescription": "All your period records and cycle settings will be permanently deleted.\n\nThis action cannot be undone.",
+  "settingsLoadError": "An error occurred while loading your settings.",
+  "settingsCycleSaveError": "Your cycle length could not be saved.",
+  "settingsPeriodSaveError": "Your period duration could not be saved.",
+  "settingsResetError": "An error occurred while deleting your data. Please try again.",
+  "predictionHowCreatedTitle": "How are predictions calculated?",
+  "predictionHowCreatedText": "Within uses the period start and end dates you enter to estimate your cycle length and period duration. When there are not enough records, the default values selected in Settings and general cycle calculation methods are used.",
+  "predictionEstimatedInfoTitle": "Which information is estimated?",
+  "predictionNextPeriodItem": "Your next period date and estimated period days",
+  "predictionPmsItem": "PMS phase",
+  "predictionFertileWindowItem": "Fertile window",
+  "predictionOvulationItem": "Ovulation day",
+  "predictionWhyDatesChangeTitle": "Why can dates change?",
+  "predictionWhyDatesChangeText": "Every person's cycle is different. Stress, illness, medication, sleep patterns, travel, hormonal changes, and other factors may cause actual dates to differ from predictions.",
+  "predictionWarningText": "Fertile window and ovulation predictions should not be used on their own to prevent or achieve pregnancy.",
+  "predictionHealthDecisionsTitle": "Health decisions",
+  "predictionHealthDecisionsText": "Within does not provide a medical diagnosis or recommend treatment, and it is not a substitute for evaluation by a doctor. Consult a healthcare professional if you notice an unusual or concerning change in your cycle.",
+  "homeGreeting": "Hello",
+  "homeSubtitle": "Today's Cycle",
+  "homeTodayStatus": "Today's status",
+  "homePhaseMenstruationName": "Period",
+  "homePhaseRenewalName": "Renewal phase",
+  "homePhaseFertileName": "Fertile window",
+  "homePhasePmsName": "PMS phase",
+  "homePhaseRestName": "Rest phase",
+  "homePhaseRestPmsName": "Rest / PMS phase",
+  "homePhaseMenstruationTitle": "You're on your period",
+  "homePhaseRenewalTitle": "You're in your renewal phase",
+  "homePhaseFertileTitle": "You're in your fertile window",
+  "homePhasePmsTitle": "You're in your PMS phase",
+  "homePhaseRestTitle": "You're in your rest phase",
+  "homePeriodDayLabel": "Period day",
+  "homeCycleDayLabel": "Cycle day",
+  "homeCycleDaysLabel": "Cycle days",
+  "homePhaseMenstruationDescription": "Your body is renewing itself. Be gentle with yourself today.",
+  "homePhaseRenewalDescription": "Your energy may begin to rise again.",
+  "homePhaseFertileDescription": "You are in a phase when your energy and fertility may be higher.",
+  "homePhasePmsDescription": "Make time to rest and care for yourself today.",
+  "homePhaseRestDescription": "You are in a calmer phase of your cycle.",
+  "homeTooltipMenstruationDescription": "Bleeding and the beginning of your body's renewal process.",
+  "homeTooltipRenewalDescription": "A dynamic phase when energy and estrogen may rise.",
+  "homeTooltipFertileDescription": "The phase when fertility rises and ovulation approaches.",
+  "homeTooltipRestPmsDescription": "A pre-period phase for slowing down and resting.",
+  "homeNextPeriod": "Next period",
+  "homeCycleInfo": "My cycle information",
+  "homeCycleLengthSuffix": "day cycle",
+  "homePeriodShortLabel": "Period:",
+  "homeLoadError": "An error occurred while loading your information.",
+  "homeRetry": "Try Again",
+  "homePeriodExpectedToday": "Expected to start today",
+  "homeOneDayLeft": "1 day left",
+  "homeDaysLeftSuffix": "days left",
+  "homePhaseOtherDaysName": "Other days",
+  "homeTooltipOtherDaysDescription": "Ovulation and fertility predictions are not shown for short cycles.",
+  "calendarTitle": "Calendar",
+  "calendarSubtitle": "Track your period and cycle predictions.",
+  "calendarLoadError": "Calendar information could not be loaded.",
+  "calendarRetry": "Try again",
+  "calendarMonthJanuary": "January",
+  "calendarMonthFebruary": "February",
+  "calendarMonthMarch": "March",
+  "calendarMonthApril": "April",
+  "calendarMonthMay": "May",
+  "calendarMonthJune": "June",
+  "calendarMonthJuly": "July",
+  "calendarMonthAugust": "August",
+  "calendarMonthSeptember": "September",
+  "calendarMonthOctober": "October",
+  "calendarMonthNovember": "November",
+  "calendarMonthDecember": "December",
+  "calendarWeekdayMonday": "Mon",
+  "calendarWeekdayTuesday": "Tue",
+  "calendarWeekdayWednesday": "Wed",
+  "calendarWeekdayThursday": "Thu",
+  "calendarWeekdayFriday": "Fri",
+  "calendarWeekdaySaturday": "Sat",
+  "calendarWeekdaySunday": "Sun",
+  "calendarActualPeriodStatus": "Actual period · Day {dayNumber}",
+  "@calendarActualPeriodStatus": {
+    "placeholders": {
+      "dayNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarStartCorrectionStatus": "Period starting {date} · start can be moved back {daysEarlier} day(s)",
+  "@calendarStartCorrectionStatus": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "daysEarlier": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarEndCorrectionStatus": "Period starting {date} · can end on day {dayNumber}",
+  "@calendarEndCorrectionStatus": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "dayNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPredictedPeriodDay": "Predicted period day",
+  "calendarEstimatedOvulationStatus": "Cycle day {dayNumber} · Estimated ovulation day",
+  "@calendarEstimatedOvulationStatus": {
+    "placeholders": {
+      "dayNumber": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarEstimatedPhaseStatus": "Cycle day {dayNumber} · {phaseName}",
+  "@calendarEstimatedPhaseStatus": {
+    "placeholders": {
+      "dayNumber": {
+        "type": "int"
+      },
+      "phaseName": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarNoRecord": "No record",
+  "calendarFutureDateInfo": "Future dates are for viewing predictions only. Period records cannot be added to these dates.",
+  "calendarRemovePeriodRecord": "Remove period record",
+  "calendarLastPeriodDay": "My last period day",
+  "calendarPeriodStartCorrectionInfo": "You can move the start of the period record that began on {date} to this date. This will not create a new historical record.",
+  "@calendarPeriodStartCorrectionInfo": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarPeriodEndExtensionInfo": "You can extend the period record that began on {date} to this date. The days in between will also be marked as actual period days.",
+  "@calendarPeriodEndExtensionInfo": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarUnfinishedPeriodInfo": "The previous period record has no end date. If a new record is added, the previous record will automatically be treated as {days} days long.",
+  "@calendarUnfinishedPeriodInfo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarAddHistoricalPeriod": "Add Past Period Record",
+  "calendarStartNewPeriod": "Start New Period",
+  "calendarPeriodStarted": "Period Started",
+  "calendarUpdateStartTitle": "Update your period start?",
+  "calendarOldStartLabel": "Previous start",
+  "calendarNewStartLabel": "New start",
+  "calendarUpdateStartDescription": "The start of the existing period record will be moved back by {daysEarlier} day(s). A new historical period record will not be created.",
+  "@calendarUpdateStartDescription": {
+    "placeholders": {
+      "daysEarlier": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarCancel": "Cancel",
+  "calendarUpdate": "Update",
+  "calendarStartUpdatedMessage": "Your period start was updated to {date}.",
+  "@calendarStartUpdatedMessage": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarStartOverlapError": "The new start date overlaps another period record.",
+  "calendarPeriodTooLongAfterStartError": "This change could not be saved because it would make the period longer than {maxDays} days.",
+  "@calendarPeriodTooLongAfterStartError": {
+    "placeholders": {
+      "maxDays": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarStartUpdateError": "The period start date could not be updated.",
+  "calendarFutureAddError": "A period record cannot be added to a future date.",
+  "calendarAlreadyPeriodTitle": "This date is already a period day",
+  "calendarAlreadyPeriodDescription": "You selected day {dayNumber} of the period record that began on {date}. A new period start cannot be added within these days.",
+  "@calendarAlreadyPeriodDescription": {
+    "placeholders": {
+      "dayNumber": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarOk": "OK",
+  "calendarUnfinishedRecordTitle": "There is a period record without an end date",
+  "calendarUnfinishedRecordBase": "The previous record that began on {date} will automatically be treated as {days} days long.",
+  "@calendarUnfinishedRecordBase": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarNewHistoricalRecordOutcome": "The new record on {date} will also be added as a {days}-day historical record.",
+  "@calendarNewHistoricalRecordOutcome": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarNewOngoingRecordOutcome": "The new record on {date} will be started as an ongoing period.",
+  "@calendarNewOngoingRecordOutcome": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarConfirm": "Confirm",
+  "calendarAddHistoricalTitle": "Add a past period record?",
+  "calendarStartLabel": "Start",
+  "calendarEndLabel": "End",
+  "calendarHistoricalDurationInfo": "The period duration for this historical record will automatically be set to {days} days. Your other period records will not change.",
+  "@calendarHistoricalDurationInfo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarAddRecord": "Add Record",
+  "calendarOverlapError": "This date range overlaps another period record.",
+  "calendarHistoricalAdded": "The past period record dated {date} was added as a {days}-day record.",
+  "@calendarHistoricalAdded": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarHistoricalAddError": "The past period record could not be added.",
+  "calendarPreviousCompletedAndHistoricalAdded": "The previous record was completed as {days} days, and the new historical record was also added as {days} days.",
+  "@calendarPreviousCompletedAndHistoricalAdded": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPreviousCompletedAndNewStarted": "The previous record was completed as {days} days, and a new period was started.",
+  "@calendarPreviousCompletedAndNewStarted": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarSelectedDateOverlapError": "The selected date overlaps the {days}-day range of an existing period record.",
+  "@calendarSelectedDateOverlapError": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarNewStartSaveError": "The new period start could not be saved.",
+  "calendarNewCycleTitle": "🌙 New Cycle",
+  "calendarConfirmStart": "Do you confirm that your period started on {date}?",
+  "@calendarConfirmStart": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarTemporaryRecordInfo": "W will create a temporary {days}-day record for now.",
+  "@calendarTemporaryRecordInfo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPeriodStartSaved": "Your period start was saved.",
+  "calendarOngoingExistsError": "There is already an ongoing period record.",
+  "calendarDateAlreadyHasRecordError": "A period record already exists for this date.",
+  "calendarPeriodStartSaveError": "Your period start could not be saved.",
+  "calendarPeriodEndSaved": "Your period end date was saved as {date}.",
+  "@calendarPeriodEndSaved": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarPeriodEndTooLongError": "A period cannot be saved as longer than {maxDays} days. You can use the Start New Period option instead.",
+  "@calendarPeriodEndTooLongError": {
+    "placeholders": {
+      "maxDays": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPeriodEndSaveError": "The period end date could not be saved.",
+  "calendarConfirmLastDayTitle": "Save your last period day?",
+  "calendarLastDayLabel": "Last period day",
+  "calendarTotalDurationLabel": "Total duration",
+  "calendarDayCount": "{days} days",
+  "@calendarDayCount": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarSaveRealDurationInfo": "This duration will be saved as your actual period length and used for future predictions.",
+  "calendarLastDaySaved": "Your last period day was saved as {date}. Your period lasted {days} days.",
+  "@calendarLastDaySaved": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPeriodLengthRangeError": "The period length must be between 1 and {maxDays} days.",
+  "@calendarPeriodLengthRangeError": {
+    "placeholders": {
+      "maxDays": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarPeriodEndUpdateError": "The period end date could not be updated.",
+  "calendarRemoveTitle": "Remove period record?",
+  "calendarRemoveDescription": "The record that began on {date} will be removed.",
+  "@calendarRemoveDescription": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "calendarRemove": "Remove",
+  "calendarRemoved": "The period record was removed.",
+  "calendarRemoveError": "The period record could not be removed.",
+  "calendarLegendActualPeriod": "Actual period",
+  "calendarLegendPredictedPeriod": "Predicted period",
+  "calendarLegendFertileWindow": "Estimated fertile window",
+  "calendarLegendPmsPhase": "Estimated PMS phase",
+  "calendarPredictionDisclaimer": "Cycle, PMS, fertile window, and ovulation information are approximate predictions and are not medical advice or a method of contraception.",
+  "calendarEstimatedMenstruationPhase": "Estimated period phase",
+  "calendarEstimatedRenewalPhase": "Estimated renewal phase",
+  "calendarEstimatedFertilePhase": "Estimated fertile window",
+  "calendarEstimatedPmsPhase": "Estimated PMS phase",
+  "calendarEstimatedRestPhase": "Estimated rest phase",
+  "settingsLanguageSection": "LANGUAGE",
+  "settingsLanguageTitle": "App language",
+  "settingsLanguageSubtitle": "Choose the language you want to use in Within",
+  "settingsLanguageDialogTitle": "Choose a language",
+  "settingsLanguageTurkish": "Türkçe",
+  "settingsLanguageEnglish": "English"
+}

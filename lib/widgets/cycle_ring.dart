@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 class CyclePhaseDetails {
   final String title;
@@ -44,8 +45,8 @@ class CycleRing extends StatefulWidget {
 class _CycleRingState extends State<CycleRing> {
   static const double _widgetSize = 300;
   static const double _paintSize = 246;
-  static const double _tooltipWidth = 132;
-  static const double _tooltipHeight = 44;
+  static const double _tooltipWidth = 148;
+  static const double _tooltipHeight = 48;
   static const Duration _tooltipDuration = Duration(milliseconds: 1800);
 
   static const Offset _ringCenter = Offset(
@@ -60,12 +61,13 @@ class _CycleRingState extends State<CycleRing> {
   Timer? _tooltipTimer;
 
   List<_PhaseSegment> _phaseSegments() {
-    final layout = _CyclePhaseLayout.create(
+    final l10n = AppLocalizations.of(context)!;
+
+    return _CyclePhaseLayout.create(
       cycleLength: widget.cycleLength,
       periodLength: widget.periodLength,
-    );
-
-    return layout.segments;
+      l10n: l10n,
+    ).segments;
   }
 
   Offset _iconCenterForPhase(_PhaseSegment phase) {
@@ -91,10 +93,8 @@ class _CycleRingState extends State<CycleRing> {
       _selectedIconCenter = _iconCenterForPhase(phase);
     });
 
-    // The callback is intentionally not triggered here. The phase information
-    // is now displayed inside CycleRing, so the HomeScreen status card remains
-    // unchanged when a ring segment is tapped.
-
+    // Phase information is displayed inside the ring.
+    // The Home screen's status card remains unchanged.
     _tooltipTimer = Timer(_tooltipDuration, () {
       if (!mounted) {
         return;
@@ -110,7 +110,6 @@ class _CycleRingState extends State<CycleRing> {
   void _handleRingTap(Offset localPosition) {
     final distanceFromCenter = (localPosition - _ringCenter).distance;
 
-    // Ignore taps on the illustration in the middle or far outside the ring.
     if (distanceFromCenter < _ringRadius - 24 ||
         distanceFromCenter > _ringRadius + 28) {
       return;
@@ -212,6 +211,7 @@ class _CycleRingState extends State<CycleRing> {
                   cycleDay: widget.cycleDay,
                   cycleLength: widget.cycleLength,
                   periodLength: widget.periodLength,
+                  phases: phases,
                 ),
               ),
             ),
@@ -239,6 +239,7 @@ class _CycleRingState extends State<CycleRing> {
             ...phases.map(
               (phase) {
                 final iconCenter = _iconCenterForPhase(phase);
+
                 return Positioned(
                   left: iconCenter.dx - 17,
                   top: iconCenter.dy - 17,
@@ -271,7 +272,10 @@ class _CycleRingState extends State<CycleRing> {
                       return FadeTransition(
                         opacity: animation,
                         child: ScaleTransition(
-                          scale: Tween<double>(begin: 0.92, end: 1).animate(
+                          scale: Tween<double>(
+                            begin: 0.92,
+                            end: 1,
+                          ).animate(
                             CurvedAnimation(
                               parent: animation,
                               curve: Curves.easeOut,
@@ -285,7 +289,7 @@ class _CycleRingState extends State<CycleRing> {
                       key: ValueKey(_selectedPhase!.title),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 8,
+                        vertical: 7,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -364,6 +368,7 @@ class _CyclePhaseLayout {
   factory _CyclePhaseLayout.create({
     required int cycleLength,
     required int periodLength,
+    required AppLocalizations l10n,
   }) {
     final safeCycleLength = math.max(1, cycleLength);
     final menstruationDays = periodLength.clamp(1, safeCycleLength).toInt();
@@ -371,8 +376,8 @@ class _CyclePhaseLayout {
 
     final segments = <_PhaseSegment>[
       _PhaseSegment(
-        title: 'Regl dönemi',
-        description: 'Kanama ve vücudun yenilenme sürecinin başlangıcı.',
+        title: l10n.homePhaseMenstruationName,
+        description: l10n.homeTooltipMenstruationDescription,
         emoji: '🩸',
         materialIcon: Icons.water_drop_rounded,
         color: const Color(0xFFE56B8A),
@@ -385,14 +390,11 @@ class _CyclePhaseLayout {
       return _CyclePhaseLayout(segments);
     }
 
-    // 21 günden kısa döngülerde standart yumurtlama formülü uygulanmaz.
-    // Halka yalnızca gerçek regl günlerini ve kalan nötr günleri gösterir.
     if (safeCycleLength < 21) {
       segments.add(
         _PhaseSegment(
-          title: 'Diğer günler',
-          description:
-              'Kısa döngülerde yumurtlama ve doğurganlık tahmini gösterilmez.',
+          title: l10n.homePhaseOtherDaysName,
+          description: l10n.homeTooltipOtherDaysDescription,
           emoji: '💤',
           materialIcon: Icons.bedtime_rounded,
           color: const Color(0xFFB9A6E8),
@@ -400,23 +402,28 @@ class _CyclePhaseLayout {
           dayCount: remainingDays,
         ),
       );
+
       return _CyclePhaseLayout(segments);
     }
 
     final ovulationDay = (safeCycleLength - 14)
         .clamp(menstruationDays + 1, safeCycleLength)
         .toInt();
+
     final fertileStart = (ovulationDay - 4)
         .clamp(menstruationDays + 1, safeCycleLength)
         .toInt();
+
     final fertileEnd = (ovulationDay + 1)
         .clamp(fertileStart, safeCycleLength)
         .toInt();
 
     final renewalDays =
         math.max(0, fertileStart - menstruationDays - 1).toInt();
+
     final fertileDays =
         math.max(0, fertileEnd - fertileStart + 1).toInt();
+
     final postFertileDays =
         math.max(0, safeCycleLength - fertileEnd).toInt();
 
@@ -425,8 +432,8 @@ class _CyclePhaseLayout {
     if (renewalDays > 0) {
       segments.add(
         _PhaseSegment(
-          title: 'Yenilenme dönemi',
-          description: 'Enerjinin ve östrojenin yükseldiği dinamik dönem.',
+          title: l10n.homePhaseRenewalName,
+          description: l10n.homeTooltipRenewalDescription,
           emoji: '🌱',
           materialIcon: Icons.spa_rounded,
           color: const Color(0xFF8BCF9B),
@@ -434,15 +441,15 @@ class _CyclePhaseLayout {
           dayCount: renewalDays,
         ),
       );
+
       nextStartDay += renewalDays;
     }
 
     if (fertileDays > 0) {
       segments.add(
         _PhaseSegment(
-          title: 'Verimli dönem',
-          description:
-              'Doğurganlığın yükseldiği ve yumurtlamanın yaklaştığı tahmini dönem.',
+          title: l10n.homePhaseFertileName,
+          description: l10n.homeTooltipFertileDescription,
           emoji: '🌸',
           materialIcon: Icons.local_florist_rounded,
           color: const Color(0xFFF4C95D),
@@ -450,14 +457,15 @@ class _CyclePhaseLayout {
           dayCount: fertileDays,
         ),
       );
+
       nextStartDay += fertileDays;
     }
 
     if (postFertileDays > 0) {
       segments.add(
         _PhaseSegment(
-          title: 'Dinlenme / PMS',
-          description: 'Regl öncesi sakinleşme ve dinlenme evresi.',
+          title: l10n.homePhaseRestPmsName,
+          description: l10n.homeTooltipRestPmsDescription,
           emoji: '💤',
           materialIcon: Icons.bedtime_rounded,
           color: const Color(0xFFB9A6E8),
@@ -475,11 +483,13 @@ class _CycleRingPainter extends CustomPainter {
   final int cycleDay;
   final int cycleLength;
   final int periodLength;
+  final List<_PhaseSegment> phases;
 
   _CycleRingPainter({
     required this.cycleDay,
     required this.cycleLength,
     required this.periodLength,
+    required this.phases,
   });
 
   @override
@@ -488,6 +498,7 @@ class _CycleRingPainter extends CustomPainter {
     Size size,
   ) {
     final safeCycleLength = math.max(1, cycleLength);
+
     final center = Offset(
       size.width / 2,
       size.height / 2,
@@ -520,44 +531,32 @@ class _CycleRingPainter extends CustomPainter {
       backgroundPaint,
     );
 
-    final layout = _CyclePhaseLayout.create(
-      cycleLength: safeCycleLength,
-      periodLength: periodLength,
-    );
+    double startAngle = -math.pi / 2;
 
-    double start = -math.pi / 2;
+    for (final phase in phases) {
+      final fullSweep =
+          (phase.dayCount / safeCycleLength) * math.pi * 2;
 
-    void drawPhase(
-      int days,
-      Color color,
-    ) {
-      if (days <= 0) {
-        return;
-      }
+      final visibleSweep = math.max(
+        0.0,
+        fullSweep - gap,
+      );
 
-      final sweep = (days / safeCycleLength) * math.pi * 2;
       final phasePaint = Paint()
-        ..color = color
+        ..color = phase.color
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
         ..strokeCap = StrokeCap.round;
 
       canvas.drawArc(
         rect,
-        start + gap,
-        math.max(0, sweep - gap * 2),
+        startAngle + gap / 2,
+        visibleSweep,
         false,
         phasePaint,
       );
 
-      start += sweep;
-    }
-
-    for (final phase in layout.segments) {
-      drawPhase(
-        phase.dayCount,
-        phase.color,
-      );
+      startAngle += fullSweep;
     }
 
     final safeCycleDay = cycleDay.clamp(1, safeCycleLength);

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 import 'screens/app_start_screen.dart';
+import 'services/locale_service.dart';
 import 'theme/app_theme.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // SharedPreferences'ın soğuk açılışta gecikmesini önlemek için önbelleğe alıyoruz
-  await SharedPreferences.getInstance();
+
+  await LocaleService.initialize();
 
   runApp(const WithinApp());
 }
@@ -19,16 +18,19 @@ class WithinApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'W',
-      theme: AppTheme.lightTheme,
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const [
-        Locale('tr'),
-        Locale('en'),
-      ],
-      home: const AppStartScreen(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleService.localeNotifier,
+      builder: (context, locale, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Within',
+          theme: AppTheme.lightTheme,
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const AppStartScreen(),
+        );
+      },
     );
   }
 }

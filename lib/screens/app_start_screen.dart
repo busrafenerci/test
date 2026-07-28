@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:within/l10n/app_localizations.dart';
 import '../services/storage_service.dart';
 import 'main_screen.dart';
 import 'welcome_screen.dart';
@@ -54,10 +54,10 @@ class _AppStartScreenState extends State<AppStartScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Uygulama başlatılırken bir hata oluştu.',
+                 Text(
+                  AppLocalizations.of(context)!.appStartError,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -69,7 +69,7 @@ class _AppStartScreenState extends State<AppStartScreen> {
                       _setupCompletedFuture = StorageService.isSetupCompleted();
                     });
                   },
-                  child: const Text('Tekrar Dene'),
+                  child: Text(AppLocalizations.of(context)!.tryAgain,),
                 ),
               ],
             ),

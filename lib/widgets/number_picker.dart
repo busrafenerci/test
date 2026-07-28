@@ -10,6 +10,7 @@ class NumberPicker extends StatelessWidget {
   final Color color;
   final Color backgroundColor;
   final String suffix;
+  final String Function(int value)? valueFormatter;
 
   const NumberPicker({
     super.key,
@@ -20,12 +21,15 @@ class NumberPicker extends StatelessWidget {
     this.color = AppColors.primary,
     this.backgroundColor = AppColors.primaryLight,
     this.suffix = 'Gün',
+    this.valueFormatter,
   });
 
   @override
   Widget build(BuildContext context) {
     final canDecrease = value > minValue;
     final canIncrease = value < maxValue;
+    final displayValue =
+        valueFormatter?.call(value) ?? '$value $suffix';
 
     return Container(
       height: 72,
@@ -54,7 +58,7 @@ class NumberPicker extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              '$value $suffix',
+              displayValue,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 21,

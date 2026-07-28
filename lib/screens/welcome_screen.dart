@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'setup_screen.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -167,10 +168,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         AnimatedOpacity(
                           opacity: _isLeaving ? 0 : 1,
                           duration: const Duration(milliseconds: 250),
-                          child: const Text(
-                            'Döngünü tanı.\nGücünü keşfet.',
+                          child: Text(
+                            AppLocalizations.of(context)!.welcomeSlogan,
                             textAlign: TextAlign.center,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 18,
                               height: 1.45,
                               fontWeight: FontWeight.w600,
@@ -287,12 +288,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                     switchInCurve: Curves.easeOut,
                                     switchOutCurve: Curves.easeIn,
                                     child: _isLeaving
-                                        ? const Row(
+                                        ? Row(
                                             key: ValueKey('loading'),
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             children: [
-                                              SizedBox(
+                                              const SizedBox(
                                                 width: 18,
                                                 height: 18,
                                                 child:
@@ -307,18 +308,18 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                               ),
                                               SizedBox(width: 10),
                                               Text(
-                                                'Devam ediliyor...',
-                                                style: TextStyle(
+                                                AppLocalizations.of(context)!.welcomeContinue,
+                                                style: const TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w700,
                                                 ),
                                               ),
                                             ],
                                           )
-                                        : const Text(
-                                            'Başlayalım',
-                                            key: ValueKey('buttonText'),
-                                            style: TextStyle(
+                                        : Text(
+                                            AppLocalizations.of(context)!.welcomeStart,
+                                            key: const ValueKey('buttonText'),
+                                            style: const TextStyle(
                                               fontSize: 17,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -408,10 +409,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     error,
                     stackTrace,
                   ) {
-                    return const Center(
+                    return Center(
                       child: Text(
-                        'W görseli buWithinmadı',
-                        style: TextStyle(
+                        AppLocalizations.of(context)!.welcomeImageError,
+                        style: const TextStyle(
                           color: Color(0xFF6842A5),
                           fontWeight: FontWeight.w600,
                         ),

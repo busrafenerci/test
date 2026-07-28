@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 import '../models/app_settings.dart';
+import '../services/locale_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import 'about_screen.dart';
@@ -59,9 +61,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Ayarlar yüklenirken bir hata oluştu.',
+            AppLocalizations.of(context)!.settingsLoadError,
           ),
         ),
       );
@@ -69,10 +71,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _selectCycleLength() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final selectedValue = await _showNumberPicker(
-      title: 'Ortalama döngü aralığı',
-      description:
-          'Within, bir sonraki regl tarihini tahmin ederken bu değeri kullanır.',
+      title: l10n.settingsCyclePickerTitle,
+      description: l10n.settingsCyclePickerDescription,
       currentValue: _settings.averageCycleLength,
       minimumValue: 10,
       maximumValue: 60,
@@ -108,20 +111,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Döngü uzunluğu kaydedilemedi.',
-          ),
+        SnackBar(
+          content: Text(l10n.settingsCycleSaveError),
         ),
       );
     }
   }
 
   Future<void> _selectPeriodLength() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final selectedValue = await _showNumberPicker(
-      title: 'Tahmini regl süresi',
-      description:
-          'Devam eden kayıtlar ve gelecek regl tahminleri için kullanılacak varsayılan süre.',
+      title: l10n.settingsPeriodPickerTitle,
+      description: l10n.settingsPeriodPickerDescription,
       currentValue: _settings.predictedPeriodLength,
       minimumValue: 1,
       maximumValue: 15,
@@ -157,10 +159,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Regl süresi kaydedilemedi.',
-          ),
+        SnackBar(
+          content: Text(l10n.settingsPeriodSaveError),
         ),
       );
     }
@@ -173,6 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required int minimumValue,
     required int maximumValue,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     int selectedValue = currentValue;
 
     return showModalBottomSheet<int>(
@@ -248,17 +249,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           });
                         },
                         childDelegate: ListWheelChildBuilderDelegate(
-                          childCount:
-                              maximumValue - minimumValue + 1,
+                          childCount: maximumValue - minimumValue + 1,
                           builder: (context, index) {
                             final value = minimumValue + index;
-                            final isSelected =
-                                value == selectedValue;
+                            final isSelected = value == selectedValue;
+                            final unit = value == 1
+                                ? l10n.daySingular
+                                : l10n.dayPlural;
 
                             return Center(
                               child: AnimatedContainer(
-                                duration:
-                                    const Duration(milliseconds: 180),
+                                duration: const Duration(milliseconds: 180),
                                 width: double.infinity,
                                 margin: const EdgeInsets.symmetric(
                                   horizontal: 28,
@@ -266,27 +267,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? _primaryPurple.withValues(
-                                          alpha: 0.10,
-                                        )
+                                      ? _primaryPurple.withValues(alpha: 0.10)
                                       : Colors.transparent,
-                                  borderRadius:
-                                      BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Center(
                                   child: Text(
-                                    '$value gün',
+                                    '$value $unit',
                                     style: TextStyle(
-                                      fontSize:
-                                          isSelected ? 21 : 17,
+                                      fontSize: isSelected ? 21 : 17,
                                       fontWeight: isSelected
                                           ? FontWeight.w700
                                           : FontWeight.w500,
                                       color: isSelected
                                           ? _primaryPurple
-                                          : const Color(
-                                              0xFF8D859E,
-                                            ),
+                                          : const Color(0xFF8D859E),
                                     ),
                                   ),
                                 ),
@@ -310,13 +305,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           backgroundColor: _primaryPurple,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(18),
                           ),
                         ),
-                        child: const Text(
-                          'Kaydet',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.settingsSave,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
@@ -333,7 +327,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+
+  Future<void> _selectLanguage() async {
+    final l10n = AppLocalizations.of(context)!;
+    final currentLanguageCode =
+        LocaleService.currentLocale.languageCode.toLowerCase();
+
+    final selectedLanguageCode = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              24,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 42,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD8D2E8),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.settingsLanguageDialogTitle,
+                    style: const TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700,
+                      color: _darkPurple,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _LanguageOption(
+                  title: l10n.settingsLanguageTurkish,
+                  languageCode: 'tr',
+                  isSelected: currentLanguageCode == 'tr',
+                  onTap: () {
+                    Navigator.of(bottomSheetContext).pop('tr');
+                  },
+                ),
+                const SizedBox(height: 8),
+                _LanguageOption(
+                  title: l10n.settingsLanguageEnglish,
+                  languageCode: 'en',
+                  isSelected: currentLanguageCode == 'en',
+                  onTap: () {
+                    Navigator.of(bottomSheetContext).pop('en');
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedLanguageCode == null ||
+        selectedLanguageCode == currentLanguageCode) {
+      return;
+    }
+
+    await LocaleService.setLocale(selectedLanguageCode);
+  }
+
   Future<void> _showResetConfirmation() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final shouldReset = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -343,17 +419,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          title: const Text(
-            'Within sıfırlansın mı?',
-            style: TextStyle(
+          title: Text(
+            l10n.settingsResetTitle,
+            style: const TextStyle(
               fontWeight: FontWeight.w700,
               color: _darkPurple,
             ),
           ),
-          content: const Text(
-            'Tüm regl kayıtların ve döngü ayarların kalıcı olarak silinecek.\n\n'
-            'Bu işlem geri alınamaz.',
-            style: TextStyle(
+          content: Text(
+            l10n.settingsResetDescription,
+            style: const TextStyle(
               height: 1.45,
               color: Color(0xFF675F78),
             ),
@@ -363,9 +438,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onPressed: () {
                 Navigator.of(dialogContext).pop(false);
               },
-              child: const Text(
-                'Vazgeç',
-              ),
+              child: Text(l10n.settingsCancel),
             ),
             FilledButton(
               onPressed: () {
@@ -375,9 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 backgroundColor: _dangerColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text(
-                'Tümünü Sil',
-              ),
+              child: Text(l10n.settingsDeleteAll),
             ),
           ],
         );
@@ -416,9 +487,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Veriler silinirken bir hata oluştu. Lütfen tekrar dene.',
+            AppLocalizations.of(context)!.settingsResetError,
           ),
         ),
       );
@@ -457,6 +528,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final averageCycleUnit = _settings.averageCycleLength == 1
+        ? l10n.daySingular
+        : l10n.dayPlural;
+
+    final predictedPeriodUnit = _settings.predictedPeriodLength == 1
+        ? l10n.daySingular
+        : l10n.dayPlural;
+
     return Scaffold(
       backgroundColor: _backgroundColor,
       body: SafeArea(
@@ -476,18 +557,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Ayarlar',
-                      style: TextStyle(
+                    Text(
+                      l10n.settingsTitle,
+                      style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w700,
                         color: _darkPurple,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Döngü ayarlarını düzenleyebilir, gizlilik bilgilerine erişebilir ve verilerini yönetebilirsin.',
-                      style: TextStyle(
+                    Text(
+                      l10n.settingsDescription,
+                      style: const TextStyle(
                         fontSize: 16,
                         height: 1.4,
                         color: Color(0xFF77707E),
@@ -495,53 +576,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 18),
                     _SettingsSection(
-                      title: 'Döngü',
+                      title: l10n.settingsCycleSection,
                       children: [
                         _SettingsTile(
-                          title: 'Ortalama döngü uzunluğu',
+                          title: l10n.settingsAverageCycleLength,
                           subtitle:
-                              '${_settings.averageCycleLength} gün',
+                              '${_settings.averageCycleLength} $averageCycleUnit',
                           icon: Icons.calendar_month_outlined,
                           onTap: _selectCycleLength,
                         ),
                         const _SettingsDivider(),
                         _SettingsTile(
-                          title: 'Tahmini regl süresi',
+                          title: l10n.settingsEstimatedPeriodLength,
                           subtitle:
-                              '${_settings.predictedPeriodLength} gün',
+                              '${_settings.predictedPeriodLength} $predictedPeriodUnit',
                           icon: Icons.water_drop_outlined,
                           onTap: _selectPeriodLength,
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
+
                     _SettingsSection(
-                      title: 'Bilgilendirme',
+                      title: l10n.settingsLanguageSection,
                       children: [
                         _SettingsTile(
-                          title: 'Tahminler Hakkında',
+                          title: l10n.settingsLanguageTitle,
                           subtitle:
-                              'Döngü tahminlerinin nasıl oluşturulduğunu öğren',
+                              LocaleService.currentLocale.languageCode == 'tr'
+                                  ? l10n.settingsLanguageTurkish
+                                  : l10n.settingsLanguageEnglish,
+                          icon: Icons.language_rounded,
+                          onTap: _selectLanguage,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _SettingsSection(
+                      title: l10n.settingsInformationSection,
+                      children: [
+                        _SettingsTile(
+                          title: l10n.settingsPredictionsTitle,
+                          subtitle: l10n.settingsPredictionsSubtitle,
                           icon: Icons.info_outline_rounded,
                           onTap: _openPredictionInfo,
                         ),
                         const _SettingsDivider(),
                         _SettingsTile(
-  title: 'Hakkında',
-  subtitle: 'Within ve uygulama sürümü',
-  assetIconPath: 'assets/icons/within_android_foreground.png',
-  onTap: _openAbout,
-),
+                          title: l10n.settingsAboutTitle,
+                          subtitle: l10n.settingsAboutSubtitle,
+                          assetIconPath:
+                              'assets/icons/within_android_foreground.png',
+                          onTap: _openAbout,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
                     _SettingsSection(
-                      title: 'Gizlilik',
+                      title: l10n.settingsPrivacySection,
                       children: [
                         _SettingsTile(
-                          title: 'Gizlilik Politikası',
-                          subtitle:
-                              'Verilerinin nasıl saklandığını öğren',
+                          title: l10n.privacyTitle,
+                          subtitle: l10n.settingsPrivacySubtitle,
                           icon: Icons.privacy_tip_outlined,
                           onTap: _openPrivacyPolicy,
                         ),
@@ -549,12 +645,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 12),
                     _SettingsSection(
-                      title: 'Veriler',
+                      title: l10n.settingsDataSection,
                       children: [
                         _SettingsTile(
-                          title: 'Tüm Verileri Sıfırla',
-                          subtitle:
-                              'Regl geçmişini ve ayarları kalıcı olarak sil',
+                          title: l10n.settingsResetAllData,
+                          subtitle: l10n.settingsResetAllDataSubtitle,
                           icon: Icons.delete_outline_rounded,
                           titleColor: _dangerColor,
                           iconColor: _dangerColor,
@@ -568,6 +663,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+}
+
+
+class _LanguageOption extends StatelessWidget {
+  final String title;
+  final String languageCode;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _LanguageOption({
+    required this.title,
+    required this.languageCode,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isSelected
+          ? _SettingsScreenState._primaryPurple.withValues(alpha: 0.10)
+          : const Color(0xFFF9F7FC),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 13,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFE8E1F1),
+                  ),
+                ),
+                child: Text(
+                  languageCode.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: _SettingsScreenState._primaryPurple,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: _SettingsScreenState._darkPurple,
+                  ),
+                ),
+              ),
+              Icon(
+                isSelected
+                    ? Icons.check_circle_rounded
+                    : Icons.circle_outlined,
+                color: isSelected
+                    ? _SettingsScreenState._primaryPurple
+                    : const Color(0xFFB8B0C2),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -593,7 +766,7 @@ class _SettingsSection extends StatelessWidget {
             bottom: 8,
           ),
           child: Text(
-            title.toUpperCase(),
+            title,
             style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -636,18 +809,18 @@ class _SettingsTile extends StatelessWidget {
   final String? assetIconPath;
 
   const _SettingsTile({
-  required this.title,
-  required this.subtitle,
-  required this.onTap,
-  this.icon,
-  this.assetIconPath,
-  this.titleColor,
-  this.iconColor,
-  this.isLoading = false,
-}) : assert(
-       icon != null || assetIconPath != null,
-       'icon veya assetIconPath verilmelidir.',
-     );
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.icon,
+    this.assetIconPath,
+    this.titleColor,
+    this.iconColor,
+    this.isLoading = false,
+  }) : assert(
+          icon != null || assetIconPath != null,
+          'Either icon or assetIconPath must be provided.',
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -662,34 +835,32 @@ class _SettingsTile extends StatelessWidget {
         child: Row(
           children: [
             if (assetIconPath != null)
-  ClipRRect(
-    borderRadius: BorderRadius.circular(7),
-    child: Image.asset(
-      assetIconPath!,
-      width: 28,
-      height: 28,
-      fit: BoxFit.cover,
-    ),
-  )
-else
-  Icon(
-    icon,
-    size: 22,
-    color: iconColor ?? _SettingsScreenState._primaryPurple,
-  ),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: Image.asset(
+                  assetIconPath!,
+                  width: 28,
+                  height: 28,
+                  fit: BoxFit.cover,
+                ),
+              )
+            else
+              Icon(
+                icon,
+                size: 22,
+                color: iconColor ?? _SettingsScreenState._primaryPurple,
+              ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: titleColor ??
-                          const Color(0xFF2D2733),
+                      color: titleColor ?? const Color(0xFF2D2733),
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -698,7 +869,7 @@ else
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color:Color(0xFF77707E),
+                      color: Color(0xFF77707E),
                     ),
                   ),
                 ],

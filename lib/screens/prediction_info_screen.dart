@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 class PredictionInfoScreen extends StatelessWidget {
   const PredictionInfoScreen({super.key});
@@ -9,6 +10,8 @@ class PredictionInfoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
@@ -22,9 +25,9 @@ class PredictionInfoScreen extends StatelessWidget {
             color: _darkPurple,
           ),
         ),
-        title: const Text(
-          'Tahminler Hakkında',
-          style: TextStyle(
+        title: Text(
+          l10n.settingsPredictionsTitle,
+          style: const TextStyle(
             fontWeight: FontWeight.w700,
             color: _darkPurple,
           ),
@@ -37,39 +40,54 @@ class PredictionInfoScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0xFFECE7FA)),
+            border: Border.all(
+              color: const Color(0xFFECE7FA),
+            ),
           ),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InfoHeading(title: 'Tahminler nasıl oluşturulur?'),
-              SizedBox(height: 10),
-              _InfoParagraph(
-                text:
-                    'Within, girdiğin regl başlangıç ve bitiş kayıtlarını kullanarak döngü uzunluğunu ve regl süresini tahmin eder. Yeterli kayıt bulunmadığında, ayarlarda seçtiğin varsayılan değerler ve genel döngü hesaplama yöntemleri kullanılır.',
+              _InfoHeading(
+                title: l10n.predictionHowCreatedTitle,
               ),
-              SizedBox(height: 24),
-              _InfoHeading(title: 'Hangi bilgiler tahminidir?'),
-              SizedBox(height: 10),
-              _InfoBullet(text: 'Bir sonraki regl tarihi ve tahmini regl günleri'),
-              _InfoBullet(text: 'PMS dönemi'),
-              _InfoBullet(text: 'Doğurgan dönem'),
-              _InfoBullet(text: 'Yumurtlama günü'),
-              SizedBox(height: 24),
-              _InfoHeading(title: 'Tarihler neden değişebilir?'),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               _InfoParagraph(
-                text:
-                    'Her kişinin döngüsü farklıdır. Stres, hastalık, ilaç kullanımı, uyku düzeni, seyahat, hormonal değişiklikler ve başka etkenler gerçek tarihlerin tahminlerden farklı olmasına neden olabilir.',
+                text: l10n.predictionHowCreatedText,
               ),
-              SizedBox(height: 24),
-              _WarningBox(),
-              SizedBox(height: 24),
-              _InfoHeading(title: 'Sağlıkla ilgili kararlar'),
-              SizedBox(height: 10),
+              const SizedBox(height: 24),
+              _InfoHeading(
+                title: l10n.predictionEstimatedInfoTitle,
+              ),
+              const SizedBox(height: 10),
+              _InfoBullet(
+                text: l10n.predictionNextPeriodItem,
+              ),
+              _InfoBullet(
+                text: l10n.predictionPmsItem,
+              ),
+              _InfoBullet(
+                text: l10n.predictionFertileWindowItem,
+              ),
+              _InfoBullet(
+                text: l10n.predictionOvulationItem,
+              ),
+              const SizedBox(height: 24),
+              _InfoHeading(
+                title: l10n.predictionWhyDatesChangeTitle,
+              ),
+              const SizedBox(height: 10),
               _InfoParagraph(
-                text:
-                    'Within tıbbi tanı koymaz, tedavi önermez ve doktor değerlendirmesinin yerine geçmez. Döngünde olağan dışı veya seni endişelendiren bir değişiklik varsa bir sağlık uzmanına danışmalısın.',
+                text: l10n.predictionWhyDatesChangeText,
+              ),
+              const SizedBox(height: 24),
+              const _WarningBox(),
+              const SizedBox(height: 24),
+              _InfoHeading(
+                title: l10n.predictionHealthDecisionsTitle,
+              ),
+              const SizedBox(height: 10),
+              _InfoParagraph(
+                text: l10n.predictionHealthDecisionsText,
               ),
             ],
           ),
@@ -84,26 +102,30 @@ class _WarningBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7E8),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFF2D79D)),
+        border: Border.all(
+          color: const Color(0xFFF2D79D),
+        ),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
+          const Icon(
             Icons.warning_amber_rounded,
             color: Color(0xFFB67800),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Doğurgan dönem ve yumurtlama tahminleri, gebelikten korunmak veya gebelik elde etmek için tek başına kullanılmamalıdır.',
-              style: TextStyle(
+              l10n.predictionWarningText,
+              style: const TextStyle(
                 fontSize: 14,
                 height: 1.5,
                 fontWeight: FontWeight.w600,
@@ -120,7 +142,9 @@ class _WarningBox extends StatelessWidget {
 class _InfoHeading extends StatelessWidget {
   final String title;
 
-  const _InfoHeading({required this.title});
+  const _InfoHeading({
+    required this.title,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +162,9 @@ class _InfoHeading extends StatelessWidget {
 class _InfoParagraph extends StatelessWidget {
   final String text;
 
-  const _InfoParagraph({required this.text});
+  const _InfoParagraph({
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +182,9 @@ class _InfoParagraph extends StatelessWidget {
 class _InfoBullet extends StatelessWidget {
   final String text;
 
-  const _InfoBullet({required this.text});
+  const _InfoBullet({
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {

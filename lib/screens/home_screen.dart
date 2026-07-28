@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 import '../models/cycle_info.dart';
 import '../models/period_record.dart';
@@ -21,6 +22,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late Future<Map<String, dynamic>> _dataFuture;
   CyclePhaseDetails? _selectedPhaseDetails;
+
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
+  bool get _isTurkish =>
+      Localizations.localeOf(context).languageCode.toLowerCase() == 'tr';
 
   @override
   void initState() {
@@ -199,18 +205,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Merhaba',
-              style: TextStyle(
+            Text(
+              _l10n.homeGreeting,
+              style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF2D2733),
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Bugünkü Döngün',
-              style: TextStyle(
+            Text(
+              _l10n.homeSubtitle,
+              style: const TextStyle(
                 fontSize: 16,
                 color: Color(0xFF77707E),
               ),
@@ -286,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   cycleDay: result.cycleDay,
                   cycleLength: cycleInfo.cycleLength,
                   periodLength: cycleInfo.periodLength,
-                  phaseName: result.phaseName,
+                  phaseName: _localizedPhaseName(result),
                   phaseIcon: result.phaseIcon,
                   imagePath: _getHomeImage(
                     cycleInfo: cycleInfo,
@@ -294,7 +300,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                   onPhaseChanged: (details) {
                     setState(() {
-                      _selectedPhaseDetails = details;
+                      _selectedPhaseDetails = details == null
+                          ? null
+                          : _localizedPhaseDetails(details);
                     });
                   },
                 ),
@@ -419,9 +427,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Bugünkü durum',
-                  style: TextStyle(
+                Text(
+                  _l10n.homeTodayStatus,
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF8B8490),
@@ -462,41 +470,130 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  String _localizedPhaseName(CycleResult result) {
+    switch (result.phase) {
+      case CyclePhase.menstruation:
+        return _l10n.homePhaseMenstruationName;
+      case CyclePhase.renewal:
+        return _l10n.homePhaseRenewalName;
+      case CyclePhase.fertile:
+        return _l10n.homePhaseFertileName;
+      case CyclePhase.pms:
+        return _l10n.homePhasePmsName;
+      case CyclePhase.rest:
+        return _l10n.homePhaseRestName;
+    }
+  }
+
+  CyclePhaseDetails _localizedPhaseDetails(CyclePhaseDetails details) {
+    final dayNumbers = RegExp(r'\d+')
+        .allMatches(details.dayText)
+        .map((match) => int.parse(match.group(0)!))
+        .toList();
+
+    final String title;
+    final String description;
+
+    switch (details.icon) {
+      case '🩸':
+        title = _l10n.homePhaseMenstruationName;
+        description = _l10n.homeTooltipMenstruationDescription;
+        break;
+      case '🌱':
+        title = _l10n.homePhaseRenewalName;
+        description = _l10n.homeTooltipRenewalDescription;
+        break;
+      case '🌸':
+        title = _l10n.homePhaseFertileName;
+        description = _l10n.homeTooltipFertileDescription;
+        break;
+      case '💤':
+        title = _l10n.homePhaseRestPmsName;
+        description = _l10n.homeTooltipRestPmsDescription;
+        break;
+      default:
+        title = details.title;
+        description = details.description;
+    }
+
+    String dayText = details.dayText;
+
+    if (dayNumbers.length == 1) {
+      dayText = _formatCycleDay(dayNumbers.first);
+    } else if (dayNumbers.length >= 2) {
+      dayText = _formatCycleDayRange(
+        dayNumbers.first,
+        dayNumbers[1],
+      );
+    }
+
+    return CyclePhaseDetails(
+      title: title,
+      description: description,
+      dayText: dayText,
+      icon: details.icon,
+    );
+  }
+
   String _currentPhaseTitle(CycleResult result) {
     switch (result.phase) {
       case CyclePhase.menstruation:
-        return 'Regl dönemindesin';
+        return _l10n.homePhaseMenstruationTitle;
       case CyclePhase.renewal:
-        return 'Yenilenme dönemindesin';
+        return _l10n.homePhaseRenewalTitle;
       case CyclePhase.fertile:
-        return 'Verimli dönemdesin';
+        return _l10n.homePhaseFertileTitle;
       case CyclePhase.pms:
-        return 'PMS dönemindesin';
+        return _l10n.homePhasePmsTitle;
       case CyclePhase.rest:
-        return 'Dinlenme dönemindesin';
+        return _l10n.homePhaseRestTitle;
     }
   }
 
   String _currentDayText(CycleResult result) {
     if (result.phase == CyclePhase.menstruation) {
-      return '${result.cycleDay}. regl günü';
+      return _formatPeriodDay(result.cycleDay);
     }
 
-    return '${result.cycleDay}. döngü günü';
+    return _formatCycleDay(result.cycleDay);
+  }
+
+  String _formatPeriodDay(int day) {
+    if (_isTurkish) {
+      return '$day. ${_l10n.homePeriodDayLabel}';
+    }
+
+    return '${_l10n.homePeriodDayLabel} $day';
+  }
+
+  String _formatCycleDay(int day) {
+    if (_isTurkish) {
+      return '$day. ${_l10n.homeCycleDayLabel}';
+    }
+
+    return '${_l10n.homeCycleDayLabel} $day';
+  }
+
+  String _formatCycleDayRange(int startDay, int endDay) {
+    if (_isTurkish) {
+      return '$startDay–$endDay. ${_l10n.homeCycleDaysLabel}';
+    }
+
+    return '${_l10n.homeCycleDaysLabel} $startDay–$endDay';
   }
 
   String _currentPhaseDescription(CycleResult result) {
     switch (result.phase) {
       case CyclePhase.menstruation:
-        return 'Vücudun yenilenme sürecinde. Bugün kendine nazik davran.';
+        return _l10n.homePhaseMenstruationDescription;
       case CyclePhase.renewal:
-        return 'Enerjin yeniden yükselmeye başlayabilir.';
+        return _l10n.homePhaseRenewalDescription;
       case CyclePhase.fertile:
-        return 'Enerjinin ve doğurganlığının yükseldiği dönemdesin.';
+        return _l10n.homePhaseFertileDescription;
       case CyclePhase.pms:
-        return 'Bugün dinlenmeye ve kendine zaman ayırmaya özen göster.';
+        return _l10n.homePhasePmsDescription;
       case CyclePhase.rest:
-        return 'Döngünün daha sakin bir evresindesin.';
+        return _l10n.homePhaseRestDescription;
     }
   }
 
@@ -524,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             icon: Icons.calendar_month_rounded,
             iconBackgroundColor: const Color(0xFFFCE6EF),
             iconColor: const Color(0xFFE34D87),
-            label: 'Sonraki regl',
+            label: _l10n.homeNextPeriod,
             value: _nextPeriodText(result.daysUntilNextPeriod),
             trailingText: _formatDate(result.nextPeriodDate),
           ),
@@ -539,9 +636,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             icon: Icons.bar_chart_rounded,
             iconBackgroundColor: const Color(0xFFEFE8FA),
             iconColor: const Color(0xFF7657A8),
-            label: 'Döngü bilgilerim',
-            value: '${cycleInfo.cycleLength} günlük döngü',
-            trailingText: 'Regl: ${cycleInfo.periodLength} gün',
+            label: _l10n.homeCycleInfo,
+            value:
+                '${cycleInfo.cycleLength} ${_l10n.homeCycleLengthSuffix}',
+            trailingText:
+                '${_l10n.homePeriodShortLabel} '
+                '${cycleInfo.periodLength} '
+                '${cycleInfo.periodLength == 1 ? _l10n.daySingular : _l10n.dayPlural}',
           ),
         ],
       ),
@@ -631,10 +732,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Bilgiler yüklenirken bir hata oluştu.',
+            Text(
+              _l10n.homeLoadError,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
@@ -642,7 +743,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _reloadData,
-              child: const Text('Tekrar Dene'),
+              child: Text(_l10n.homeRetry),
             ),
           ],
         ),
@@ -652,33 +753,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   String _nextPeriodText(int days) {
     if (days == 0) {
-      return 'Bugün başlaması bekleniyor';
+      return _l10n.homePeriodExpectedToday;
     }
 
     if (days == 1) {
-      return '1 gün kaldı';
+      return _l10n.homeOneDayLeft;
     }
 
-    return '$days gün kaldı';
+    return '$days ${_l10n.homeDaysLeftSuffix}';
   }
 
   String _formatDate(DateTime date) {
-    const months = [
-      'Ocak',
-      'Şubat',
-      'Mart',
-      'Nisan',
-      'Mayıs',
-      'Haziran',
-      'Temmuz',
-      'Ağustos',
-      'Eylül',
-      'Ekim',
-      'Kasım',
-      'Aralık',
+    final months = [
+      _l10n.month1,
+      _l10n.month2,
+      _l10n.month3,
+      _l10n.month4,
+      _l10n.month5,
+      _l10n.month6,
+      _l10n.month7,
+      _l10n.month8,
+      _l10n.month9,
+      _l10n.month10,
+      _l10n.month11,
+      _l10n.month12,
     ];
 
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
+    final month = months[date.month - 1];
+
+    if (_isTurkish) {
+      return '${date.day} $month ${date.year}';
+    }
+
+    return '$month ${date.day}, ${date.year}';
   }
 
   DateTime _dateOnly(DateTime date) {

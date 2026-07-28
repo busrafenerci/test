@@ -6,6 +6,7 @@ import '../models/cycle_info.dart';
 import '../models/period_record.dart';
 import '../services/cycle_calculator.dart';
 import '../services/storage_service.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 class CalendarScreen extends StatefulWidget {
   final int refreshVersion;
@@ -20,6 +21,8 @@ class CalendarScreen extends StatefulWidget {
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
+  AppLocalizations get _l10n => AppLocalizations.of(context)!;
+
   DateTime _visibleMonth = DateTime(
     DateTime.now().year,
     DateTime.now().month,
@@ -184,30 +187,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
   bool _isSaving = false;
   String? _errorMessage;
 
-  static const List<String> _monthNames = [
-    'Ocak',
-    'Şubat',
-    'Mart',
-    'Nisan',
-    'Mayıs',
-    'Haziran',
-    'Temmuz',
-    'Ağustos',
-    'Eylül',
-    'Ekim',
-    'Kasım',
-    'Aralık',
-  ];
+  List<String> get _monthNames => [
+        _l10n.calendarMonthJanuary,
+        _l10n.calendarMonthFebruary,
+        _l10n.calendarMonthMarch,
+        _l10n.calendarMonthApril,
+        _l10n.calendarMonthMay,
+        _l10n.calendarMonthJune,
+        _l10n.calendarMonthJuly,
+        _l10n.calendarMonthAugust,
+        _l10n.calendarMonthSeptember,
+        _l10n.calendarMonthOctober,
+        _l10n.calendarMonthNovember,
+        _l10n.calendarMonthDecember,
+      ];
 
-  static const List<String> _weekDays = [
-    'Pzt',
-    'Sal',
-    'Çar',
-    'Per',
-    'Cum',
-    'Cmt',
-    'Paz',
-  ];
+  List<String> get _weekDays => [
+        _l10n.calendarWeekdayMonday,
+        _l10n.calendarWeekdayTuesday,
+        _l10n.calendarWeekdayWednesday,
+        _l10n.calendarWeekdayThursday,
+        _l10n.calendarWeekdayFriday,
+        _l10n.calendarWeekdaySaturday,
+        _l10n.calendarWeekdaySunday,
+      ];
 
   @override
   void initState() {
@@ -264,7 +267,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Takvim bilgileri yüklenemedi.';
+        _errorMessage = _l10n.calendarLoadError;
       });
     }
   }
@@ -333,7 +336,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _loadCalendarData,
-                child: const Text('Tekrar dene'),
+                child: Text(_l10n.calendarRetry),
               ),
             ],
           ),
@@ -347,18 +350,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Takvim',
-            style: TextStyle(
+          Text(
+            _l10n.calendarTitle,
+            style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w700,
               color: Color(0xFF2D2733),
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Regl ve döngü tahminlerini takip et.',
-            style: TextStyle(
+          Text(
+            _l10n.calendarSubtitle,
+            style: const TextStyle(
               fontSize: 16,
               color: Color(0xFF77707E),
             ),
@@ -411,7 +414,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           onPressed: _showPreviousMonth,
         ),
         Text(
-          '${_monthNames[_visibleMonth.month - 1]} ${_visibleMonth.year}',
+          _formatMonthYear(_visibleMonth),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
@@ -567,7 +570,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           currentDate: date,
         );
 
-        isPmsDay = cycleResult.phaseName.contains('PMS');
+        isPmsDay = cycleResult.phase == CyclePhase.pms;
       }
     }
 
@@ -687,7 +690,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       final dayNumber =
           selectedDate.difference(_dateOnly(actualRecord.startDate)).inDays + 1;
 
-      statusText = 'Gerçek regl · $dayNumber. gün';
+      statusText = _l10n.calendarActualPeriodStatus(dayNumber);
       phaseLeadingWidget = const Icon(
         Icons.water_drop_rounded,
         color: Color(0xFFD9577D),
@@ -698,8 +701,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           _dateOnly(periodStartCorrectionCandidate.startDate);
       final daysEarlier = oldStartDate.difference(selectedDate).inDays;
 
-      statusText =
-          '${_formatDate(oldStartDate)} başlangıçlı regl · başlangıç $daysEarlier gün geriye alınabilir';
+      statusText = _l10n.calendarStartCorrectionStatus(
+        _formatDate(oldStartDate),
+        daysEarlier,
+      );
       phaseLeadingWidget = const Icon(
         Icons.edit_calendar_rounded,
         color: Color(0xFF7657A8),
@@ -711,15 +716,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
               .inDays +
           1;
 
-      statusText =
-          '${_formatDate(periodEndCandidate.startDate)} başlangıçlı regl · $dayNumber. gün olarak bitirilebilir';
+      statusText = _l10n.calendarEndCorrectionStatus(
+        _formatDate(periodEndCandidate.startDate),
+        dayNumber,
+      );
       phaseLeadingWidget = const Icon(
         Icons.check_circle_outline_rounded,
         color: Color(0xFF7657A8),
         size: 28,
       );
     } else if (isPredictedPeriodDay) {
-      statusText = 'Tahmini regl günü';
+      statusText = _l10n.calendarPredictedPeriodDay;
       phaseLeadingWidget = const Icon(
         Icons.water_drop_outlined,
         color: Color(0xFFE4A2B5),
@@ -740,22 +747,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
         );
 
         if (isOvulation) {
-          statusText =
-              '${cycleResult.cycleDay}. gün · Tahmini yumurtlama günü';
+          statusText = _l10n.calendarEstimatedOvulationStatus(
+            cycleResult.cycleDay,
+          );
           phaseLeadingWidget = const Text(
             '👑',
             style: TextStyle(fontSize: 24),
           );
         } else {
-          statusText =
-              '${cycleResult.cycleDay}. gün · ${_estimatedPhaseName(cycleResult.phaseName)}';
+          statusText = _l10n.calendarEstimatedPhaseStatus(
+            cycleResult.cycleDay,
+            _estimatedPhaseName(cycleResult.phase),
+          );
           phaseLeadingWidget = Text(
             cycleResult.phaseIcon,
             style: const TextStyle(fontSize: 24),
           );
         }
       } else {
-        statusText = 'Kayıt yok';
+        statusText = _l10n.calendarNoRecord;
         phaseLeadingWidget = const Text(
           '📅',
           style: TextStyle(fontSize: 24),
@@ -776,18 +786,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
           color: const Color(0xFFF3EFF8),
           borderRadius: BorderRadius.circular(14),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.lock_clock_outlined,
               size: 18,
               color: Color(0xFF7657A8),
             ),
-            SizedBox(width: 9),
+            const SizedBox(width: 9),
             Expanded(
               child: Text(
-                'Gelecek tarihler yalnızca tahminleri görüntülemek içindir. Bu tarihlere regl kaydı eklenemez.',
-                style: TextStyle(
+                _l10n.calendarFutureDateInfo,
+                style: const TextStyle(
                   fontSize: 12.5,
                   color: Color(0xFF655A70),
                 ),
@@ -811,9 +821,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   Icons.check_circle_outline_rounded,
                   size: 18,
                 ),
-                label: const Text(
-                  'Reglim Bitti',
-                  style: TextStyle(fontSize: 13),
+                label: Text(
+                  AppLocalizations.of(context)!.periodEnded,
+                  style: const TextStyle(fontSize: 13),
                 ),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7657A8),
@@ -833,9 +843,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   Icons.delete_outline_rounded,
                   size: 18,
                 ),
-                label: const Text(
-                  'Regl kaydını kaldır',
-                  style: TextStyle(fontSize: 13),
+                label: Text(
+                  _l10n.calendarRemovePeriodRecord,
+                  style: const TextStyle(fontSize: 13),
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFC74469),
@@ -864,9 +874,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   Icons.check_circle_outline_rounded,
                   size: 18,
                 ),
-                label: const Text(
-                  'Son regl günüm',
-                  style: TextStyle(fontSize: 13),
+                label: Text(
+                  _l10n.calendarLastPeriodDay,
+                  style: const TextStyle(fontSize: 13),
                 ),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7657A8),
@@ -886,9 +896,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   Icons.delete_outline_rounded,
                   size: 18,
                 ),
-                label: const Text(
-                  'Regl kaydını kaldır',
-                  style: TextStyle(fontSize: 13),
+                label: Text(
+                  _l10n.calendarRemovePeriodRecord,
+                  style: const TextStyle(fontSize: 13),
                 ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFC74469),
@@ -912,7 +922,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
-              '${_formatDate(periodStartCorrectionCandidate.startDate)} tarihinde başlayan regl kaydının başlangıcını bu tarihe çekebilirsin. Bu işlem yeni bir geçmiş kayıt oluşturmaz.',
+              _l10n.calendarPeriodStartCorrectionInfo(
+                _formatDate(periodStartCorrectionCandidate.startDate),
+              ),
               style: const TextStyle(
                 fontSize: 12.5,
                 height: 1.35,
@@ -935,9 +947,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Icons.water_drop_outlined,
                 size: 18,
               ),
-              label: const Text(
-                'Reglim bugün başladı',
-                style: TextStyle(fontSize: 13),
+              label:  Text(
+                AppLocalizations.of(context)!.periodStartedToday,
+                 style: const TextStyle(fontSize: 13),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF7657A8),
@@ -958,7 +970,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               borderRadius: BorderRadius.circular(14),
             ),
             child: Text(
-              '${_formatDate(periodEndCandidate.startDate)} tarihinde başlayan regl kaydının bitişini bu tarihe uzatabilirsin. Aradaki günler de gerçek regl günü olarak işaretlenecek.',
+              _l10n.calendarPeriodEndExtensionInfo(
+                _formatDate(periodEndCandidate.startDate),
+              ),
               style: const TextStyle(
                 fontSize: 12.5,
                 height: 1.35,
@@ -981,9 +995,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Icons.check_circle_outline_rounded,
                 size: 18,
               ),
-              label: const Text(
-                'Son regl günüm',
-                style: TextStyle(fontSize: 13),
+              label: Text(
+                _l10n.calendarLastPeriodDay,
+                style: const TextStyle(fontSize: 13),
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF7657A8),
@@ -1021,7 +1035,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
-                      'Önceki regl kaydının bitişi girilmemiş. Yeni kayıt eklenirse önceki kayıt otomatik olarak $_defaultUnfinishedPeriodLength gün kabul edilecek.',
+                      _l10n.calendarUnfinishedPeriodInfo(
+                        _defaultUnfinishedPeriodLength,
+                      ),
                       style: const TextStyle(
                         fontSize: 12.5,
                         height: 1.35,
@@ -1047,10 +1063,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               label: Text(
                 isBeforeOngoingPeriod
-                    ? 'Geçmiş Regl Kaydı Ekle'
+                    ? _l10n.calendarAddHistoricalPeriod
                     : selectedDate.isBefore(today)
-                        ? 'Geçmiş Regl Kaydı Ekle'
-                        : 'Yeni Regl Başlat',
+                        ? _l10n.calendarAddHistoricalPeriod
+                        : _l10n.calendarStartNewPeriod,
                 style: const TextStyle(fontSize: 13),
               ),
               style: FilledButton.styleFrom(
@@ -1083,8 +1099,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
           label: Text(
             selectedDate.isBefore(today)
-                ? 'Geçmiş Regl Kaydı Ekle'
-                : 'Regl Başladı',
+                ? _l10n.calendarAddHistoricalPeriod
+                : _l10n.calendarPeriodStarted,
             style: const TextStyle(fontSize: 13),
           ),
           style: FilledButton.styleFrom(
@@ -1125,7 +1141,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${selectedDate.day} ${_monthNames[selectedDate.month - 1]} ${selectedDate.year}',
+                      _formatDate(selectedDate),
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1168,23 +1184,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Regl başlangıcın güncellensin mi?'),
+          title: Text(_l10n.calendarUpdateStartTitle),
           content: Text(
-            'Eski başlangıç: ${_formatDate(oldStartDate)}\n'
-            'Yeni başlangıç: ${_formatDate(normalizedSelectedDate)}\n\n'
-            'Mevcut regl kaydının başlangıcı $daysEarlier gün geriye alınacak. Yeni bir geçmiş regl kaydı oluşturulmayacak.',
+            '${_l10n.calendarOldStartLabel}: ${_formatDate(oldStartDate)}\n'
+            '${_l10n.calendarNewStartLabel}: ${_formatDate(normalizedSelectedDate)}\n\n'
+            '${_l10n.calendarUpdateStartDescription(daysEarlier)}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
+              child: Text(_l10n.calendarCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF7657A8),
               ),
-              child: const Text('Güncelle'),
+              child: Text(_l10n.calendarUpdate),
             ),
           ],
         );
@@ -1271,7 +1287,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Regl başlangıcın ${_formatDate(normalizedSelectedDate)} olarak güncellendi.',
+            _l10n.calendarStartUpdatedMessage(
+              _formatDate(normalizedSelectedDate),
+            ),
           ),
         ),
       );
@@ -1282,12 +1300,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
       final String message;
       if (error.message == 'UPDATED_PERIOD_OVERLAPS_EXISTING_PERIOD') {
-        message = 'Yeni başlangıç tarihi başka bir regl kaydıyla çakışıyor.';
+        message = _l10n.calendarStartOverlapError;
       } else if (error.message == 'UPDATED_PERIOD_TOO_LONG') {
-        message =
-            'Bu değişiklik regl süresini $_maximumPeriodLength günden uzun yapacağı için kaydedilemedi.';
+        message = _l10n.calendarPeriodTooLongAfterStartError(
+          _maximumPeriodLength,
+        );
       } else {
-        message = 'Regl başlangıç tarihi güncellenemedi.';
+        message = _l10n.calendarStartUpdateError;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1299,8 +1318,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Regl başlangıç tarihi güncellenemedi.'),
+        SnackBar(
+          content: Text(_l10n.calendarStartUpdateError),
         ),
       );
     } finally {
@@ -1318,8 +1337,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     if (selectedDate.isAfter(today)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gelecek tarihler için regl kaydı eklenemez.'),
+        SnackBar(
+          content: Text(_l10n.calendarFutureAddError),
         ),
       );
       return;
@@ -1340,16 +1359,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text('Bu tarih zaten regl günün'),
+            title: Text(_l10n.calendarAlreadyPeriodTitle),
             content: Text(
-              '${_formatDate(recordOnSelectedDate.startDate)} tarihinde başlayan '
-              'regl kaydının $dayNumber. gününü seçtin. Bu günlerin içine yeni '
-              'bir regl başlangıcı eklenemez.',
+              _l10n.calendarAlreadyPeriodDescription(
+                dayNumber,
+                _formatDate(recordOnSelectedDate.startDate),
+              ),
             ),
             actions: [
               FilledButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Tamam'),
+                child: Text(_l10n.calendarOk),
               ),
             ],
           );
@@ -1379,24 +1399,32 @@ class _CalendarScreenState extends State<CalendarScreen> {
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text('Bitişi girilmemiş regl kaydı var'),
+            title: Text(_l10n.calendarUnfinishedRecordTitle),
             content: Text(
-              '${_formatDate(ongoingStartDate)} tarihinde başlayan önceki kayıt '
-              'otomatik olarak $_defaultUnfinishedPeriodLength gün kabul edilecek.\n\n'
-              '${_formatDate(selectedDate)} tarihindeki yeni kayıt '
-              '${selectedIsHistorical ? 'de $_defaultUnfinishedPeriodLength günlük geçmiş kayıt olarak eklenecek.' : 'devam eden regl olarak başlatılacak.'}',
+              '${_l10n.calendarUnfinishedRecordBase(
+                _formatDate(ongoingStartDate),
+                _defaultUnfinishedPeriodLength,
+              )}\n\n'
+              '${selectedIsHistorical
+                  ? _l10n.calendarNewHistoricalRecordOutcome(
+                      _formatDate(selectedDate),
+                      _defaultUnfinishedPeriodLength,
+                    )
+                  : _l10n.calendarNewOngoingRecordOutcome(
+                      _formatDate(selectedDate),
+                    )}',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Vazgeç'),
+                child: Text(_l10n.calendarCancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7657A8),
                 ),
-                child: const Text('Onayla'),
+                child: Text(_l10n.calendarConfirm),
               ),
             ],
           );
@@ -1429,24 +1457,25 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Geçmiş regl kaydı eklensin mi?'),
+          title: Text(_l10n.calendarAddHistoricalTitle),
           content: Text(
-            'Başlangıç: ${_formatDate(selectedDate)}\n'
-            'Bitiş: ${_formatDate(endDate)}\n\n'
-            'Bu geçmiş kayıt için regl süresi otomatik olarak '
-            '$_defaultUnfinishedPeriodLength gün kabul edilecek. Mevcut diğer regl kayıtların değişmeyecek.',
+            '${_l10n.calendarStartLabel}: ${_formatDate(selectedDate)}\n'
+            '${_l10n.calendarEndLabel}: ${_formatDate(endDate)}\n\n'
+            '${_l10n.calendarHistoricalDurationInfo(
+              _defaultUnfinishedPeriodLength,
+            )}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
+              child: Text(_l10n.calendarCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF7657A8),
               ),
-              child: const Text('Kaydı Ekle'),
+              child: Text(_l10n.calendarAddRecord),
             ),
           ],
         );
@@ -1476,10 +1505,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     if (overlapsExistingRecord) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Bu tarih aralığı başka bir regl kaydıyla çakışıyor.',
-          ),
+        SnackBar(
+          content: Text(_l10n.calendarOverlapError),
         ),
       );
       return;
@@ -1507,7 +1534,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${_formatDate(selectedDate)} tarihli geçmiş regl kaydı $_defaultUnfinishedPeriodLength gün olarak eklendi.',
+            _l10n.calendarHistoricalAdded(
+              _formatDate(selectedDate),
+              _defaultUnfinishedPeriodLength,
+            ),
           ),
         ),
       );
@@ -1517,8 +1547,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Geçmiş regl kaydı eklenemedi.'),
+        SnackBar(
+          content: Text(_l10n.calendarHistoricalAddError),
         ),
       );
     } finally {
@@ -1610,8 +1640,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
         SnackBar(
           content: Text(
             selectedIsHistorical
-                ? 'Önceki kayıt $_defaultUnfinishedPeriodLength gün olarak tamamlandı ve yeni geçmiş kayıt da $_defaultUnfinishedPeriodLength gün olarak eklendi.'
-                : 'Önceki kayıt $_defaultUnfinishedPeriodLength gün olarak tamamlandı ve yeni regl başlatıldı.',
+                ? _l10n.calendarPreviousCompletedAndHistoricalAdded(
+                    _defaultUnfinishedPeriodLength,
+                  )
+                : _l10n.calendarPreviousCompletedAndNewStarted(
+                    _defaultUnfinishedPeriodLength,
+                  ),
           ),
         ),
       );
@@ -1622,8 +1656,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
       final message = error.message == 'NEW_START_OVERLAPS_ONGOING_PERIOD' ||
               error.message == 'NEW_RECORD_OVERLAPS_EXISTING_PERIOD'
-          ? 'Seçilen tarih mevcut bir regl kaydının $_defaultUnfinishedPeriodLength günlük aralığıyla çakışıyor.'
-          : 'Yeni regl başlangıcı kaydedilemedi.';
+          ? _l10n.calendarSelectedDateOverlapError(
+              _defaultUnfinishedPeriodLength,
+            )
+          : _l10n.calendarNewStartSaveError;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -1634,8 +1670,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Yeni regl başlangıcı kaydedilemedi.'),
+        SnackBar(
+          content: Text(_l10n.calendarNewStartSaveError),
         ),
       );
     } finally {
@@ -1658,19 +1694,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('🌙 Yeni Döngü'),
+          title: Text(_l10n.calendarNewCycleTitle),
           content: Text(
-            '${_formatDate(selectedDate)} tarihinde regl başladığını onaylıyor musun?\n\n'
-            'W şimdilik $_defaultUnfinishedPeriodLength günlük geçici bir kayıt oluşturacak.',
+            '${_l10n.calendarConfirmStart(
+              _formatDate(selectedDate),
+            )}\n\n'
+            '${_l10n.calendarTemporaryRecordInfo(
+              _defaultUnfinishedPeriodLength,
+            )}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
+              child: Text(_l10n.calendarCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Regl Başladı'),
+              child: Text(_l10n.calendarPeriodStarted),
             ),
           ],
         );
@@ -1710,8 +1750,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Regl başlangıcı kaydedildi.'),
+        SnackBar(
+          content: Text(_l10n.calendarPeriodStartSaved),
         ),
       );
     } on StateError catch (error) {
@@ -1720,8 +1760,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       final message = error.message == 'An ongoing period already exists.'
-          ? 'Devam eden bir regl kaydı zaten var.'
-          : 'Bu tarih için zaten bir regl kaydı bulunuyor.';
+          ? _l10n.calendarOngoingExistsError
+          : _l10n.calendarDateAlreadyHasRecordError;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -1732,8 +1772,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Regl başlangıcı kaydedilemedi.'),
+        SnackBar(
+          content: Text(_l10n.calendarPeriodStartSaveError),
         ),
       );
     } finally {
@@ -1767,7 +1807,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Regl bitiş tarihi ${_formatDate(selectedDate)} olarak kaydedildi.',
+            _l10n.calendarPeriodEndSaved(
+              _formatDate(selectedDate),
+            ),
           ),
         ),
       );
@@ -1777,8 +1819,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       final message = error.message == 'ONGOING_PERIOD_TOO_LONG'
-          ? 'Regl süresi $_maximumPeriodLength günden uzun kaydedilemez. Yeni regl başlat seçeneğini kullanabilirsin.'
-          : 'Regl bitiş tarihi kaydedilemedi.';
+          ? _l10n.calendarPeriodEndTooLongError(
+              _maximumPeriodLength,
+            )
+          : _l10n.calendarPeriodEndSaveError;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -1789,8 +1833,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Regl bitiş tarihi kaydedilemedi.'),
+        SnackBar(
+          content: Text(_l10n.calendarPeriodEndSaveError),
         ),
       );
     } finally {
@@ -1810,23 +1854,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Son regl günün kaydedilsin mi?'),
+          title: Text(_l10n.calendarConfirmLastDayTitle),
           content: Text(
-            'Son regl günü: ${_formatDate(selectedDate)}\n'
-            'Toplam süre: ${_dateOnly(selectedDate).difference(_dateOnly(record.startDate)).inDays + 1} gün\n\n'
-            'Bu süre gerçek regl süren olarak kaydedilecek ve sonraki tahminlerde kullanılacak.',
+            '${_l10n.calendarLastDayLabel}: ${_formatDate(selectedDate)}\n'
+            '${_l10n.calendarTotalDurationLabel}: '
+            '${_l10n.calendarDayCount(
+              _dateOnly(selectedDate)
+                      .difference(_dateOnly(record.startDate))
+                      .inDays +
+                  1,
+            )}\n\n'
+            '${_l10n.calendarSaveRealDurationInfo}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
+              child: Text(_l10n.calendarCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF7657A8),
               ),
-              child: const Text('Güncelle'),
+              child: Text(_l10n.calendarUpdate),
             ),
           ],
         );
@@ -1882,7 +1932,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Son regl günün ${_formatDate(normalizedSelectedDate)} olarak kaydedildi. Regl süren $newPeriodLength gün.',
+            _l10n.calendarLastDaySaved(
+              _formatDate(normalizedSelectedDate),
+              newPeriodLength,
+            ),
           ),
         ),
       );
@@ -1892,8 +1945,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       final message = error.message == 'INVALID_PERIOD_LENGTH'
-          ? 'Regl süresi 1 ile $_maximumPeriodLength gün arasında olmalıdır.'
-          : 'Regl bitiş tarihi güncellenemedi.';
+          ? _l10n.calendarPeriodLengthRangeError(
+              _maximumPeriodLength,
+            )
+          : _l10n.calendarPeriodEndUpdateError;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -1904,8 +1959,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Regl bitiş tarihi güncellenemedi.'),
+        SnackBar(
+          content: Text(_l10n.calendarPeriodEndUpdateError),
         ),
       );
     } finally {
@@ -1922,21 +1977,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Regl kaydı kaldırılsın mı?'),
+          title: Text(_l10n.calendarRemoveTitle),
           content: Text(
-            '${_formatDate(record.startDate)} tarihinde başlayan kayıt kaldırılacak.',
+            _l10n.calendarRemoveDescription(
+              _formatDate(record.startDate),
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
+              child: Text(_l10n.calendarCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFC74469),
               ),
-              child: const Text('Kaldır'),
+              child: Text(_l10n.calendarRemove),
             ),
           ],
         );
@@ -1962,12 +2019,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Regl kaydı kaldırıldı.')),
+        SnackBar(content: Text(_l10n.calendarRemoved)),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Regl kaydı kaldırılamadı.')),
+        SnackBar(content: Text(_l10n.calendarRemoveError)),
       );
     } finally {
       if (mounted) {
@@ -1979,48 +2036,48 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _buildLegend() {
-    return const Column(
+    return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           children: [
             Expanded(
               child: _LegendItem(
-                color: Color(0xFFD9577D),
-                label: 'Gerçek regl',
+                color: const Color(0xFFD9577D),
+                label: _l10n.calendarLegendActualPeriod,
               ),
             ),
             Expanded(
               child: _LegendItem(
-                color: Color(0xFFFCE4EC),
-                label: 'Tahmini regl',
-                borderColor: Color(0xFFE4A2B5),
+                color: const Color(0xFFFCE4EC),
+                label: _l10n.calendarLegendPredictedPeriod,
+                borderColor: const Color(0xFFE4A2B5),
               ),
             ),
           ],
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: _LegendItem(
-                color: Color(0xFFE6B800),
-                label: 'Tahmini doğurgan dönem',
+                color: const Color(0xFFE6B800),
+                label: _l10n.calendarLegendFertileWindow,
               ),
             ),
             Expanded(
               child: _LegendItem(
-                color: Color(0xFF8E24AA),
-                label: 'Tahmini PMS dönemi',
+                color: const Color(0xFF8E24AA),
+                label: _l10n.calendarLegendPmsPhase,
               ),
             ),
           ],
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Text(
-          'Döngü, PMS, doğurgan dönem ve yumurtlama bilgileri yaklaşık tahminlerdir; tıbbi tavsiye veya doğum kontrol yöntemi değildir.',
+          _l10n.calendarPredictionDisclaimer,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 10.5,
             height: 1.35,
             color: Color(0xFF8A8294),
@@ -2030,22 +2087,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  String _estimatedPhaseName(String phaseName) {
-    final normalized = phaseName.toLowerCase();
-
-    if (normalized.contains('pms')) {
-      return 'Tahmini PMS dönemi';
+  String _estimatedPhaseName(CyclePhase phase) {
+    switch (phase) {
+      case CyclePhase.menstruation:
+        return _l10n.calendarEstimatedMenstruationPhase;
+      case CyclePhase.renewal:
+        return _l10n.calendarEstimatedRenewalPhase;
+      case CyclePhase.fertile:
+        return _l10n.calendarEstimatedFertilePhase;
+      case CyclePhase.pms:
+        return _l10n.calendarEstimatedPmsPhase;
+      case CyclePhase.rest:
+        return _l10n.calendarEstimatedRestPhase;
     }
-
-    if (normalized.contains('doğurgan') || normalized.contains('fertil')) {
-      return 'Tahmini doğurgan dönem';
-    }
-
-    if (normalized.contains('yumurtlama') || normalized.contains('ovülasyon')) {
-      return 'Tahmini yumurtlama günü';
-    }
-
-    return 'Tahmini $phaseName';
   }
 
   void _showPreviousMonth() {
@@ -2084,8 +2138,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return DateTime(date.year, date.month, date.day);
   }
 
+  String _formatMonthYear(DateTime date) {
+    return '${_monthNames[date.month - 1]} ${date.year}';
+  }
+
   String _formatDate(DateTime date) {
-    return '${date.day} ${_monthNames[date.month - 1]} ${date.year}';
+    final monthName = _monthNames[date.month - 1];
+    final languageCode = Localizations.localeOf(context).languageCode;
+
+    if (languageCode == 'tr') {
+      return '${date.day} $monthName ${date.year}';
+    }
+
+    return '$monthName ${date.day}, ${date.year}';
   }
 }
 

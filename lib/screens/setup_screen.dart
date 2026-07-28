@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
@@ -13,14 +14,52 @@ class SetupScreen extends StatefulWidget {
   State<SetupScreen> createState() => _SetupScreenState();
 }
 
-class _SetupScreenState extends State<SetupScreen>
-    with SingleTickerProviderStateMixin {
+class _SetupScreenState extends State<SetupScreen> {
   DateTime _lastPeriodDate = DateTime.now();
   int _periodLength = 4;
   int _cycleLength = 28;
   bool _hasReadInformation = false;
   bool _isSaving = false;
   bool _isButtonPressed = false;
+
+  String _monthName(BuildContext context, int month) {
+    final l10n = AppLocalizations.of(context)!;
+
+    switch (month) {
+      case 1:
+        return l10n.month1;
+      case 2:
+        return l10n.month2;
+      case 3:
+        return l10n.month3;
+      case 4:
+        return l10n.month4;
+      case 5:
+        return l10n.month5;
+      case 6:
+        return l10n.month6;
+      case 7:
+        return l10n.month7;
+      case 8:
+        return l10n.month8;
+      case 9:
+        return l10n.month9;
+      case 10:
+        return l10n.month10;
+      case 11:
+        return l10n.month11;
+      case 12:
+        return l10n.month12;
+      default:
+        return '';
+    }
+  }
+
+  String _formattedDate(BuildContext context) {
+    return '${_lastPeriodDate.day} '
+        '${_monthName(context, _lastPeriodDate.month)} '
+        '${_lastPeriodDate.year}';
+  }
 
   Future<void> _selectDate() async {
     final pickedDate = await showDatePicker(
@@ -30,11 +69,13 @@ class _SetupScreenState extends State<SetupScreen>
       lastDate: DateTime.now(),
     );
 
-    if (pickedDate != null) {
-      setState(() {
-        _lastPeriodDate = pickedDate;
-      });
+    if (!mounted || pickedDate == null) {
+      return;
     }
+
+    setState(() {
+      _lastPeriodDate = pickedDate;
+    });
   }
 
   Future<void> _completeSetup() async {
@@ -43,6 +84,10 @@ class _SetupScreenState extends State<SetupScreen>
     }
 
     await HapticFeedback.lightImpact();
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -75,8 +120,10 @@ class _SetupScreenState extends State<SetupScreen>
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bilgiler kaydedilemedi. Lütfen tekrar dene.'),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.saveFailed,
+          ),
         ),
       );
     } finally {
@@ -88,30 +135,9 @@ class _SetupScreenState extends State<SetupScreen>
     }
   }
 
-  String get formattedDate {
-    const months = [
-      '',
-      'Ocak',
-      'Şubat',
-      'Mart',
-      'Nisan',
-      'Mayıs',
-      'Haziran',
-      'Temmuz',
-      'Ağustos',
-      'Eylül',
-      'Ekim',
-      'Kasım',
-      'Aralık',
-    ];
-
-    return '${_lastPeriodDate.day} '
-        '${months[_lastPeriodDate.month]} '
-        '${_lastPeriodDate.year}';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final canStart = _hasReadInformation && !_isSaving;
 
     return Scaffold(
@@ -146,10 +172,10 @@ class _SetupScreenState extends State<SetupScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _SectionTitle(
+                          _SectionTitle(
                             icon: Icons.calendar_today_rounded,
                             iconColor: AppColors.primary,
-                            title: 'Son Regl Başlangıcı',
+                            title: l10n.lastPeriodStart,
                           ),
                           const SizedBox(height: 10),
                           InkWell(
@@ -170,8 +196,10 @@ class _SetupScreenState extends State<SetupScreen>
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      formattedDate,
-                                      style: Theme.of(context).textTheme.titleMedium,
+                                      _formattedDate(context),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
                                     ),
                                   ),
                                   const Icon(
@@ -188,10 +216,10 @@ class _SetupScreenState extends State<SetupScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _SectionTitle(
+                          _SectionTitle(
                             icon: Icons.water_drop_rounded,
                             iconColor: AppColors.period,
-                            title: 'Regl Süresi',
+                            title: l10n.periodDuration,
                           ),
                           const SizedBox(height: 10),
                           NumberPicker(
@@ -200,6 +228,9 @@ class _SetupScreenState extends State<SetupScreen>
                             maxValue: 15,
                             color: AppColors.period,
                             backgroundColor: AppColors.periodBackground,
+                            suffix: _periodLength == 1
+                              ? l10n.daySingular
+                              : l10n.dayPlural,
                             onChanged: (value) {
                               setState(() {
                                 _periodLength = value;
@@ -211,10 +242,10 @@ class _SetupScreenState extends State<SetupScreen>
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _SectionTitle(
+                          _SectionTitle(
                             icon: Icons.autorenew_rounded,
                             iconColor: AppColors.cycle,
-                            title: 'Ortalama Döngü',
+                            title: l10n.averageCycle,
                           ),
                           const SizedBox(height: 10),
                           NumberPicker(
@@ -223,6 +254,9 @@ class _SetupScreenState extends State<SetupScreen>
                             maxValue: 45,
                             color: AppColors.cycle,
                             backgroundColor: AppColors.cycleBackground,
+                            suffix: _periodLength == 1
+                              ? l10n.daySingular
+                              : l10n.dayPlural,
                             onChanged: (value) {
                               setState(() {
                                 _cycleLength = value;
@@ -239,17 +273,17 @@ class _SetupScreenState extends State<SetupScreen>
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
-                          children: const [
-                            Icon(
+                          children: [
+                            const Icon(
                               Icons.info_outline_rounded,
                               color: Color(0xFF6842A5),
                               size: 20,
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Within tarafından gösterilen regl, PMS, doğurgan dönem ve yumurtlama tarihleri tahminidir. Tıbbi tavsiye yerine geçmez ve gebelikten korunma yöntemi olarak kullanılmamalıdır.',
-                                style: TextStyle(
+                                l10n.setupDisclaimer,
+                                style: const TextStyle(
                                   fontSize: 11.5,
                                   height: 1.35,
                                   color: Color(0xFF574675),
@@ -275,9 +309,9 @@ class _SetupScreenState extends State<SetupScreen>
                             horizontalTitleGap: 8,
                             activeColor: AppColors.primary,
                             controlAffinity: ListTileControlAffinity.leading,
-                            title: const Text(
-                              'Bilgilendirmeyi okudum ve anladım.',
-                              style: TextStyle(
+                            title: Text(
+                              l10n.disclaimerAccepted,
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -289,19 +323,28 @@ class _SetupScreenState extends State<SetupScreen>
                             duration: const Duration(milliseconds: 180),
                             child: Listener(
                               onPointerDown: (_) {
-                                if (!canStart || _isSaving) return;
+                                if (!canStart || _isSaving) {
+                                  return;
+                                }
+
                                 setState(() {
                                   _isButtonPressed = true;
                                 });
                               },
                               onPointerUp: (_) {
-                                if (!_isButtonPressed) return;
+                                if (!_isButtonPressed) {
+                                  return;
+                                }
+
                                 setState(() {
                                   _isButtonPressed = false;
                                 });
                               },
                               onPointerCancel: (_) {
-                                if (!_isButtonPressed) return;
+                                if (!_isButtonPressed) {
+                                  return;
+                                }
+
                                 setState(() {
                                   _isButtonPressed = false;
                                 });
@@ -328,8 +371,11 @@ class _SetupScreenState extends State<SetupScreen>
                                                 : const Color(0x596842A5))
                                             : Colors.transparent,
                                         blurRadius:
-                                            _isButtonPressed || _isSaving ? 10 : 20,
-                                        spreadRadius: _isButtonPressed ? 0 : 1,
+                                            _isButtonPressed || _isSaving
+                                                ? 10
+                                                : 20,
+                                        spreadRadius:
+                                            _isButtonPressed ? 0 : 1,
                                         offset: Offset(
                                           0,
                                           _isButtonPressed ? 4 : 8,
@@ -338,10 +384,13 @@ class _SetupScreenState extends State<SetupScreen>
                                     ],
                                   ),
                                   child: FilledButton(
-                                    onPressed: canStart ? _completeSetup : null,
+                                    onPressed:
+                                        canStart ? _completeSetup : null,
                                     style: ButtonStyle(
-                                      elevation: const WidgetStatePropertyAll(0),
-                                      shadowColor: const WidgetStatePropertyAll(
+                                      elevation:
+                                          const WidgetStatePropertyAll(0),
+                                      shadowColor:
+                                          const WidgetStatePropertyAll(
                                         Colors.transparent,
                                       ),
                                       foregroundColor:
@@ -351,53 +400,59 @@ class _SetupScreenState extends State<SetupScreen>
                                       backgroundColor:
                                           WidgetStateProperty.resolveWith<Color>(
                                         (states) {
-                                          if (!canStart) {
-                                            return const Color(0xFFC7B9E5);
-                                          }
                                           if (_isSaving) {
                                             return const Color(0xFF57358D);
                                           }
+
+                                          if (!canStart) {
+                                            return const Color(0xFFC7B9E5);
+                                          }
+
                                           if (states.contains(
                                             WidgetState.pressed,
                                           )) {
                                             return const Color(0xFF59388F);
                                           }
+
                                           return const Color(0xFF6842A5);
                                         },
                                       ),
                                       overlayColor:
-                                          WidgetStateProperty.resolveWith<Color?>(
-                                        (states) {
-                                          if (states.contains(
-                                            WidgetState.pressed,
-                                          )) {
-                                            return Colors.white.withValues(
-                                              alpha: 0.10,
-                                            );
-                                          }
-                                          return null;
-                                        },
-                                      ),
+                                          WidgetStateProperty.resolveWith<
+                                              Color?>((states) {
+                                        if (states.contains(
+                                          WidgetState.pressed,
+                                        )) {
+                                          return Colors.white.withValues(
+                                            alpha: 0.10,
+                                          );
+                                        }
+
+                                        return null;
+                                      }),
                                       shape: WidgetStatePropertyAll(
                                         RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(18),
+                                          borderRadius:
+                                              BorderRadius.circular(18),
                                         ),
                                       ),
                                     ),
                                     child: AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 160),
+                                      duration:
+                                          const Duration(milliseconds: 160),
                                       switchInCurve: Curves.easeOut,
                                       switchOutCurve: Curves.easeIn,
                                       child: _isSaving
-                                          ? const Row(
-                                              key: ValueKey('loading'),
+                                          ? Row(
+                                              key: const ValueKey('loading'),
                                               mainAxisAlignment:
                                                   MainAxisAlignment.center,
                                               children: [
-                                                SizedBox(
+                                                const SizedBox(
                                                   width: 18,
                                                   height: 18,
-                                                  child: CircularProgressIndicator(
+                                                  child:
+                                                      CircularProgressIndicator(
                                                     strokeWidth: 2.2,
                                                     valueColor:
                                                         AlwaysStoppedAnimation<
@@ -406,20 +461,20 @@ class _SetupScreenState extends State<SetupScreen>
                                                     ),
                                                   ),
                                                 ),
-                                                SizedBox(width: 10),
+                                                const SizedBox(width: 10),
                                                 Text(
-                                                  'Kaydediliyor...',
-                                                  style: TextStyle(
+                                                  l10n.setupSaving,
+                                                  style: const TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w700,
                                                   ),
                                                 ),
                                               ],
                                             )
-                                          : const Text(
-                                              'Başla',
-                                              key: ValueKey('buttonText'),
-                                              style: TextStyle(
+                                          : Text(
+                                              l10n.setupStart,
+                                              key: const ValueKey('buttonText'),
+                                              style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w700,
                                               ),
@@ -449,52 +504,61 @@ class _SetupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return SizedBox(
-      height: 106,
+      height: 130,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(
-              top: 8,
-              right: 112,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Seni Tanıyalım',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineMedium
-                      ?.copyWith(
-                        fontSize: 26,
-                        height: 1.1,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF342A49),
-                      ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Merhaba, ben W. Sana daha iyi eşlik edebilmem '
-                  'için biraz bilgiye ihtiyacım var.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    height: 1.4,
-                    color: Color(0xFF655C75),
+          Positioned.fill(
+            right: 105,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                top: 8,
+                bottom: 6,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.setupTitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineMedium
+                        ?.copyWith(
+                          fontSize: 25,
+                          height: 1.08,
+                          fontWeight: FontWeight.w800,
+                          color: const Color(0xFF342A49),
+                        ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: Text(
+                      l10n.setupDescription,
+                      maxLines: 5,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        height: 1.35,
+                        color: Color(0xFF655C75),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-
           Positioned(
             right: -2,
-            bottom: -10,
+            bottom: -5,
             child: Image.asset(
               'assets/images/Within_head.png',
-              width: 112,
-              height: 112,
+              width: 108,
+              height: 108,
               fit: BoxFit.contain,
               alignment: Alignment.bottomCenter,
               filterQuality: FilterQuality.high,

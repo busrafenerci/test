@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:within/l10n/app_localizations.dart';
+
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  static const Color _primaryPurple = Color(0xFF7C5CE7);
   static const Color _darkPurple = Color(0xFF382C62);
   static const Color _backgroundColor = Color(0xFFF8F6FF);
 
@@ -22,9 +23,9 @@ class AboutScreen extends StatelessWidget {
             color: _darkPurple,
           ),
         ),
-        title: const Text(
-          'Hakkında',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.aboutTitle,
+          style: const TextStyle(
             fontWeight: FontWeight.w700,
             color: _darkPurple,
           ),
@@ -40,9 +41,9 @@ class AboutScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: const Color(0xFFECE7FA)),
           ),
-          child: const Column(
+          child: Column(
             children: [
-              ClipRRect(
+              const ClipRRect(
   borderRadius: BorderRadius.all(
     Radius.circular(18),
   ),
@@ -56,7 +57,7 @@ class AboutScreen extends StatelessWidget {
   ),
 ),
               SizedBox(height: 14),
-              Text(
+              const Text(
                 'Within',
                 style: TextStyle(
                   fontSize: 28,
@@ -66,17 +67,17 @@ class AboutScreen extends StatelessWidget {
               ),
               SizedBox(height: 4),
               Text(
-                'Sürüm 1.0.0',
-                style: TextStyle(
+                AppLocalizations.of(context)!.aboutVersion,
+                style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF81798F),
                 ),
               ),
               SizedBox(height: 24),
               Text(
-                'Within, regl döngülerini kolayca kaydetmeye ve kişisel döngü tahminlerini takip etmeye yardımcı olmak amacıyla geliştirilmiştir.',
+                 AppLocalizations.of(context)!.aboutDescription,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   height: 1.6,
                   color: Color(0xFF675F78),
@@ -95,8 +96,8 @@ class AboutScreen extends StatelessWidget {
                   ),
                   SizedBox(width: 8),
                   Text(
-                    'Türkiye’de geliştirildi.',
-                    style: TextStyle(
+                     AppLocalizations.of(context)!.developedInTurkey,
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: _darkPurple,
@@ -106,9 +107,9 @@ class AboutScreen extends StatelessWidget {
               ),
               SizedBox(height: 18),
               Text(
-                'İletişim adresi mağaza yayını öncesinde eklenecektir.',
+                 AppLocalizations.of(context)!.contactComingSoon,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   height: 1.5,
                   color: Color(0xFF81798F),

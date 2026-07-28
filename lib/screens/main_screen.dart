@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-
-import 'calendar_screen.dart';
+import 'package:within/screens/calendar_screen.dart';
 import 'home_screen.dart';
 import 'settings_screen.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({
@@ -65,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
         height: 72,
         labelBehavior:
             NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(
               Icons.home_outlined,
@@ -75,7 +75,7 @@ class _MainScreenState extends State<MainScreen> {
               Icons.home_rounded,
               color: _primaryPurple,
             ),
-            label: 'Ana Sayfa',
+            label: AppLocalizations.of(context)!.navHome,
           ),
           NavigationDestination(
             icon: Icon(
@@ -86,7 +86,7 @@ class _MainScreenState extends State<MainScreen> {
               Icons.calendar_month_rounded,
               color: _primaryPurple,
             ),
-            label: 'Takvim',
+            label: AppLocalizations.of(context)!.navCalendar,
           ),
           NavigationDestination(
             icon: Icon(
@@ -97,7 +97,7 @@ class _MainScreenState extends State<MainScreen> {
               Icons.settings_rounded,
               color: _primaryPurple,
             ),
-            label: 'Ayarlar',
+            label: AppLocalizations.of(context)!.navSettings,
           ),
         ],
       ),
