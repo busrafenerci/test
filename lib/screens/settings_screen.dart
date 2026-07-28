@@ -529,7 +529,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _SettingsTile(
   title: 'Hakkında',
   subtitle: 'Within ve uygulama sürümü',
-  assetIconPath: 'assets/icons/within_app_icon.png',
+  assetIconPath: 'assets/icons/within_android_foreground.png',
   onTap: _openAbout,
 ),
                       ],
@@ -698,7 +698,7 @@ else
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w400,
-                      color: Color(0xFF8B8490),
+                      color:Color(0xFF77707E),
                     ),
                   ),
                 ],

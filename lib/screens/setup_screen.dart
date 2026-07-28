@@ -123,7 +123,7 @@ class _SetupScreenState extends State<SetupScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const _SetupHeader(),
-              const SizedBox(height: 14),
+              const SizedBox(height: 6),
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -449,68 +449,58 @@ class _SetupHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Seni Tanıyalım',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontSize: 26,
-                      height: 1.1,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF342A49),
-                    ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Bu bilgiler kişisel döngü tahminleri oluşturmak için kullanılır.',
-                style: TextStyle(
-                  fontSize: 13,
-                  height: 1.4,
-                  color: Color(0xFF655C75),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        const _WithinHeaderPortrait(),
-      ],
-    );
-  }
-}
-
-class _WithinHeaderPortrait extends StatelessWidget {
-  const _WithinHeaderPortrait();
-
-  @override
-  Widget build(BuildContext context) {
     return SizedBox(
-      width: 90,
-      height: 90,
-      child: ClipOval(
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0x33EEE4FF),
-                Color(0x777A4CC5),
+      height: 106,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+              top: 8,
+              right: 112,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Seni Tanıyalım',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium
+                      ?.copyWith(
+                        fontSize: 26,
+                        height: 1.1,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF342A49),
+                      ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Merhaba, ben W. Sana daha iyi eşlik edebilmem '
+                  'için biraz bilgiye ihtiyacım var.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: Color(0xFF655C75),
+                  ),
+                ),
               ],
             ),
           ),
-          child: Image.asset(
-            'assets/images/Within_head.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
-            filterQuality: FilterQuality.high,
+
+          Positioned(
+            right: -2,
+            bottom: -10,
+            child: Image.asset(
+              'assets/images/Within_head.png',
+              width: 112,
+              height: 112,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
+              filterQuality: FilterQuality.high,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

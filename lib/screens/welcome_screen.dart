@@ -153,18 +153,17 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         AnimatedOpacity(
                           opacity: _isLeaving ? 0 : 1,
                           duration: const Duration(milliseconds: 250),
-                          child: const Text(
-                            'W',
+                          child: Text(
+                            'Within',
                             style: TextStyle(
-                              fontSize: 46,
-                              height: 1,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF6842A5),
-                              letterSpacing: -1.4,
+                              fontSize: 29,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.primary,
+                              letterSpacing: -0.4,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
                         AnimatedOpacity(
                           opacity: _isLeaving ? 0 : 1,
                           duration: const Duration(milliseconds: 250),
@@ -172,8 +171,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             'Döngünü tanı.\nGücünü keşfet.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              fontSize: 20,
-                              height: 1.42,
+                              fontSize: 18,
+                              height: 1.45,
                               fontWeight: FontWeight.w600,
                               color: Color(0xFF514A59),
                             ),
