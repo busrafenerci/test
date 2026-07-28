@@ -143,17 +143,35 @@ class _SetupScreenState extends State<SetupScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _SetupHeader(),
-              const SizedBox(height: 6),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isShortScreen = constraints.maxHeight < 700;
+            final isNarrowScreen = constraints.maxWidth < 360;
+            final horizontalPadding = isNarrowScreen ? 16.0 : 24.0;
+
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                horizontalPadding,
+                isShortScreen ? 8 : 12,
+                horizontalPadding,
+                16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _SetupHeader(),
+                  SizedBox(height: isShortScreen ? 4 : 6),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.fromLTRB(
+                      isNarrowScreen ? 16 : 20,
+                      isShortScreen ? 16 : 18,
+                      isNarrowScreen ? 16 : 20,
+                      isShortScreen ? 16 : 20,
+                    ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(28),
@@ -167,7 +185,6 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,6 +230,7 @@ class _SetupScreenState extends State<SetupScreen> {
                           ),
                         ],
                       ),
+                      SizedBox(height: isShortScreen ? 14 : 18),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -228,9 +246,6 @@ class _SetupScreenState extends State<SetupScreen> {
                             maxValue: 15,
                             color: AppColors.period,
                             backgroundColor: AppColors.periodBackground,
-                            suffix: _periodLength == 1
-                              ? l10n.daySingular
-                              : l10n.dayPlural,
                             onChanged: (value) {
                               setState(() {
                                 _periodLength = value;
@@ -239,6 +254,7 @@ class _SetupScreenState extends State<SetupScreen> {
                           ),
                         ],
                       ),
+                      SizedBox(height: isShortScreen ? 14 : 18),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -254,9 +270,6 @@ class _SetupScreenState extends State<SetupScreen> {
                             maxValue: 45,
                             color: AppColors.cycle,
                             backgroundColor: AppColors.cycleBackground,
-                            suffix: _periodLength == 1
-                              ? l10n.daySingular
-                              : l10n.dayPlural,
                             onChanged: (value) {
                               setState(() {
                                 _cycleLength = value;
@@ -265,6 +278,7 @@ class _SetupScreenState extends State<SetupScreen> {
                           ),
                         ],
                       ),
+                      SizedBox(height: isShortScreen ? 14 : 18),
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
@@ -293,6 +307,7 @@ class _SetupScreenState extends State<SetupScreen> {
                           ],
                         ),
                       ),
+                      SizedBox(height: isShortScreen ? 14 : 18),
                       Column(
                         children: [
                           CheckboxListTile(
@@ -490,10 +505,11 @@ class _SetupScreenState extends State<SetupScreen> {
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
+              ],
+            ),
+          );
+        },
+      ),
       ),
     );
   }
@@ -506,66 +522,63 @@ class _SetupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return SizedBox(
-      height: 130,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            right: 105,
-            child: Padding(
-              padding: const EdgeInsets.only(
-                top: 8,
-                bottom: 6,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.setupTitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineMedium
-                        ?.copyWith(
-                          fontSize: 25,
-                          height: 1.08,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF342A49),
-                        ),
-                  ),
-                  const SizedBox(height: 6),
-                  Expanded(
-                    child: Text(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrowScreen = constraints.maxWidth < 340;
+        final imageSize = isNarrowScreen ? 88.0 : 104.0;
+
+        return Padding(
+          padding: const EdgeInsets.only(
+            top: 4,
+            bottom: 6,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.setupTitle,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(
+                            fontSize: isNarrowScreen ? 23 : 26,
+                            height: 1.1,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF342A49),
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
                       l10n.setupDescription,
-                      maxLines: 5,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12.5,
+                      style: TextStyle(
+                        fontSize: isNarrowScreen ? 12 : 13,
                         height: 1.35,
-                        color: Color(0xFF655C75),
+                        color: const Color(0xFF655C75),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: imageSize,
+                height: imageSize,
+                child: Image.asset(
+                  'assets/images/Within_head.png',
+                  fit: BoxFit.contain,
+                  alignment: Alignment.bottomCenter,
+                  filterQuality: FilterQuality.high,
+                ),
+              ),
+            ],
           ),
-          Positioned(
-            right: -2,
-            bottom: -5,
-            child: Image.asset(
-              'assets/images/Within_head.png',
-              width: 108,
-              height: 108,
-              fit: BoxFit.contain,
-              alignment: Alignment.bottomCenter,
-              filterQuality: FilterQuality.high,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -587,13 +600,15 @@ class _SectionTitle extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: iconColor),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF342A49),
-              ),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF342A49),
+                ),
+          ),
         ),
       ],
     );

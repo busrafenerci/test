@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'setup_screen.dart';
 import 'package:within/l10n/app_localizations.dart';
+import 'setup_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -93,6 +93,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -126,211 +128,255 @@ class _WelcomeScreenState extends State<WelcomeScreen>
             SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final isShortScreen =
-                      constraints.maxHeight < 750;
+                  final isShortScreen = constraints.maxHeight < 700;
+                  final isVeryShortScreen = constraints.maxHeight < 580;
 
-                  final imageAreaHeight = isShortScreen
-                      ? constraints.maxHeight * 0.49
-                      : constraints.maxHeight * 0.53;
+                  final imageAreaHeight = (constraints.maxHeight -
+                          (isShortScreen ? 220 : 205))
+                      .clamp(
+                    isVeryShortScreen ? 210.0 : 245.0,
+                    520.0,
+                  );
 
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(
+                  return SingleChildScrollView(
+                    physics: isShortScreen
+                        ? const BouncingScrollPhysics()
+                        : const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(
                       20,
-                      6,
+                      isShortScreen ? 2 : 6,
                       20,
-                      22,
+                      isShortScreen ? 12 : 22,
                     ),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: AnimatedOpacity(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight -
+                            (isShortScreen ? 14 : 28),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedOpacity(
                             opacity: _isLeaving ? 0 : 1,
                             duration: const Duration(milliseconds: 250),
                             child: _buildWithinArea(
                               height: imageAreaHeight,
+                              imageErrorText: l10n.welcomeImageError,
                             ),
                           ),
-                        ),
-                        AnimatedOpacity(
-                          opacity: _isLeaving ? 0 : 1,
-                          duration: const Duration(milliseconds: 250),
-                          child: Text(
-                            'Within',
-                            style: TextStyle(
-                              fontSize: 29,
-                              fontWeight: FontWeight.w700,
-                              color: Theme.of(context).colorScheme.primary,
-                              letterSpacing: -0.4,
+                          AnimatedOpacity(
+                            opacity: _isLeaving ? 0 : 1,
+                            duration: const Duration(milliseconds: 250),
+                            child: Text(
+                              'Within',
+                              style: TextStyle(
+                                fontSize: isShortScreen ? 26 : 29,
+                                fontWeight: FontWeight.w700,
+                                color:
+                                    Theme.of(context).colorScheme.primary,
+                                letterSpacing: -0.4,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        AnimatedOpacity(
-                          opacity: _isLeaving ? 0 : 1,
-                          duration: const Duration(milliseconds: 250),
-                          child: Text(
-                            AppLocalizations.of(context)!.welcomeSlogan,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              height: 1.45,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF514A59),
+                          SizedBox(height: isShortScreen ? 8 : 12),
+                          AnimatedOpacity(
+                            opacity: _isLeaving ? 0 : 1,
+                            duration: const Duration(milliseconds: 250),
+                            child: Text(
+                              l10n.welcomeSlogan,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: isShortScreen ? 16 : 18,
+                                height: 1.35,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF514A59),
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 30),
-                        AnimatedOpacity(
-                          opacity: _isLeaving ? 0.92 : 1,
-                          duration: const Duration(milliseconds: 180),
-                          child: Listener(
-                            onPointerDown: (_) {
-                              if (_isLeaving) return;
-                              setState(() {
-                                _isButtonPressed = true;
-                              });
-                            },
-                            onPointerUp: (_) {
-                              if (!_isButtonPressed) return;
-                              setState(() {
-                                _isButtonPressed = false;
-                              });
-                            },
-                            onPointerCancel: (_) {
-                              if (!_isButtonPressed) return;
-                              setState(() {
-                                _isButtonPressed = false;
-                              });
-                            },
-                            child: AnimatedScale(
-                              scale: _isButtonPressed
-                                  ? 0.965
-                                  : _isLeaving
-                                      ? 0.98
-                                      : 1,
-                              duration: const Duration(milliseconds: 100),
-                              curve: Curves.easeOutCubic,
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 150),
-                                width: double.infinity,
-                                height: 58,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _isButtonPressed || _isLeaving
-                                          ? const Color(0x356842A5)
-                                          : const Color(0x596842A5),
-                                      blurRadius:
-                                          _isButtonPressed || _isLeaving ? 10 : 20,
-                                      spreadRadius: _isButtonPressed ? 0 : 1,
-                                      offset: Offset(
-                                        0,
-                                        _isButtonPressed ? 4 : 8,
+                          SizedBox(height: isShortScreen ? 18 : 30),
+                          AnimatedOpacity(
+                            opacity: _isLeaving ? 0.92 : 1,
+                            duration: const Duration(milliseconds: 180),
+                            child: Listener(
+                              onPointerDown: (_) {
+                                if (_isLeaving) {
+                                  return;
+                                }
+
+                                setState(() {
+                                  _isButtonPressed = true;
+                                });
+                              },
+                              onPointerUp: (_) {
+                                if (!_isButtonPressed) {
+                                  return;
+                                }
+
+                                setState(() {
+                                  _isButtonPressed = false;
+                                });
+                              },
+                              onPointerCancel: (_) {
+                                if (!_isButtonPressed) {
+                                  return;
+                                }
+
+                                setState(() {
+                                  _isButtonPressed = false;
+                                });
+                              },
+                              child: AnimatedScale(
+                                scale: _isButtonPressed
+                                    ? 0.965
+                                    : _isLeaving
+                                        ? 0.98
+                                        : 1,
+                                duration:
+                                    const Duration(milliseconds: 100),
+                                curve: Curves.easeOutCubic,
+                                child: AnimatedContainer(
+                                  duration:
+                                      const Duration(milliseconds: 150),
+                                  width: double.infinity,
+                                  height: isShortScreen ? 54 : 58,
+                                  decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            _isButtonPressed || _isLeaving
+                                                ? const Color(0x356842A5)
+                                                : const Color(0x596842A5),
+                                        blurRadius:
+                                            _isButtonPressed || _isLeaving
+                                                ? 10
+                                                : 20,
+                                        spreadRadius:
+                                            _isButtonPressed ? 0 : 1,
+                                        offset: Offset(
+                                          0,
+                                          _isButtonPressed ? 4 : 8,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                child: FilledButton(
-                                  onPressed: _isLeaving
-                                      ? null
-                                      : _openSetupScreen,
-                                  style: ButtonStyle(
-                                    elevation:
-                                        const WidgetStatePropertyAll(0),
-                                    shadowColor:
-                                        const WidgetStatePropertyAll(
-                                      Colors.transparent,
-                                    ),
-                                    foregroundColor:
-                                        const WidgetStatePropertyAll(
-                                      Colors.white,
-                                    ),
-                                    backgroundColor:
-                                        WidgetStateProperty.resolveWith<Color>(
-                                      (states) {
-                                        if (_isLeaving) {
-                                          return const Color(0xFF57358D);
-                                        }
-
-                                        if (states.contains(
-                                          WidgetState.pressed,
-                                        )) {
-                                          return const Color(0xFF59388F);
-                                        }
-
-                                        return const Color(0xFF6842A5);
-                                      },
-                                    ),
-                                    overlayColor:
-                                        WidgetStateProperty.resolveWith<Color?>(
-                                      (states) {
-                                        if (states.contains(
-                                          WidgetState.pressed,
-                                        )) {
-                                          return Colors.white.withValues(
-                                            alpha: 0.10,
-                                          );
-                                        }
-
-                                        return null;
-                                      },
-                                    ),
-                                    shape: WidgetStatePropertyAll(
-                                      RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                    ),
+                                    ],
                                   ),
-                                  child: AnimatedSwitcher(
-                                    duration:
-                                        const Duration(milliseconds: 160),
-                                    switchInCurve: Curves.easeOut,
-                                    switchOutCurve: Curves.easeIn,
-                                    child: _isLeaving
-                                        ? Row(
-                                            key: ValueKey('loading'),
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              const SizedBox(
-                                                width: 18,
-                                                height: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2.2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                          Color>(
-                                                    Colors.white,
+                                  child: FilledButton(
+                                    onPressed: _isLeaving
+                                        ? null
+                                        : _openSetupScreen,
+                                    style: ButtonStyle(
+                                      elevation:
+                                          const WidgetStatePropertyAll(0),
+                                      shadowColor:
+                                          const WidgetStatePropertyAll(
+                                        Colors.transparent,
+                                      ),
+                                      foregroundColor:
+                                          const WidgetStatePropertyAll(
+                                        Colors.white,
+                                      ),
+                                      backgroundColor:
+                                          WidgetStateProperty.resolveWith<
+                                              Color>(
+                                        (states) {
+                                          if (_isLeaving) {
+                                            return const Color(0xFF57358D);
+                                          }
+
+                                          if (states.contains(
+                                            WidgetState.pressed,
+                                          )) {
+                                            return const Color(0xFF59388F);
+                                          }
+
+                                          return const Color(0xFF6842A5);
+                                        },
+                                      ),
+                                      overlayColor:
+                                          WidgetStateProperty.resolveWith<
+                                              Color?>(
+                                        (states) {
+                                          if (states.contains(
+                                            WidgetState.pressed,
+                                          )) {
+                                            return Colors.white.withValues(
+                                              alpha: 0.10,
+                                            );
+                                          }
+
+                                          return null;
+                                        },
+                                      ),
+                                      shape: WidgetStatePropertyAll(
+                                        RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                      ),
+                                    ),
+                                    child: AnimatedSwitcher(
+                                      duration: const Duration(
+                                        milliseconds: 160,
+                                      ),
+                                      switchInCurve: Curves.easeOut,
+                                      switchOutCurve: Curves.easeIn,
+                                      child: _isLeaving
+                                          ? Row(
+                                              key: const ValueKey(
+                                                'loading',
+                                              ),
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2.2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                            Color>(
+                                                      Colors.white,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              SizedBox(width: 10),
-                                              Text(
-                                                AppLocalizations.of(context)!.welcomeContinue,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700,
+                                                const SizedBox(width: 10),
+                                                Flexible(
+                                                  child: Text(
+                                                    l10n.welcomeContinue,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style:
+                                                        const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
                                                 ),
+                                              ],
+                                            )
+                                          : Text(
+                                              l10n.welcomeStart,
+                                              key: const ValueKey(
+                                                'buttonText',
                                               ),
-                                            ],
-                                          )
-                                        : Text(
-                                            AppLocalizations.of(context)!.welcomeStart,
-                                            key: const ValueKey('buttonText'),
-                                            style: const TextStyle(
-                                              fontSize: 17,
-                                              fontWeight: FontWeight.w700,
+                                              style: const TextStyle(
+                                                fontSize: 17,
+                                                fontWeight:
+                                                    FontWeight.w700,
+                                              ),
                                             ),
-                                          ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -344,6 +390,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
   Widget _buildWithinArea({
     required double height,
+    required String imageErrorText,
   }) {
     return SizedBox(
       width: double.infinity,
@@ -411,7 +458,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   ) {
                     return Center(
                       child: Text(
-                        AppLocalizations.of(context)!.welcomeImageError,
+                        imageErrorText,
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xFF6842A5),
                           fontWeight: FontWeight.w600,
