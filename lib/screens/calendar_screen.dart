@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// Calendar behavior revision: 2026-07-27-v6-editable-end-window
+// Calendar behavior revision: 2026-07-28-v7-editable-start-window
 
 import '../models/cycle_info.dart';
 import '../models/period_record.dart';
@@ -113,6 +113,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
 
     return predictedLength.clamp(1, _maximumPeriodLength).toInt();
+  }
+
+  /// Finds a period whose saved start date is one or two days after [date].
+  ///
+  /// This allows the user to correct a recently entered period start without
+  /// creating a separate historical period record.
+  PeriodRecord? _findPeriodStartCorrectionCandidate(DateTime date) {
+    final targetDate = _dateOnly(date);
+    final sortedRecords = [..._actualRecords]
+      ..sort((a, b) => a.startDate.compareTo(b.startDate));
+
+    for (final record in sortedRecords) {
+      final startDate = _dateOnly(record.startDate);
+      final daysBeforeStart = startDate.difference(targetDate).inDays;
+
+      if (daysBeforeStart == 1 || daysBeforeStart == 2) {
+        return record;
+      }
+
+      if (startDate.isAfter(targetDate.add(const Duration(days: 2)))) {
+        break;
+      }
+    }
+
+    return null;
   }
 
   /// Finds the nearest period that may use [date] as its real end date.
@@ -638,7 +663,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
       records: _actualRecords,
     );
 
-    final periodEndCandidate = actualRecord == null
+    final periodStartCorrectionCandidate = actualRecord == null
+        ? _findPeriodStartCorrectionCandidate(selectedDate)
+        : null;
+
+    final periodEndCandidate = actualRecord == null &&
+            periodStartCorrectionCandidate == null
         ? _findPeriodEndCandidate(selectedDate)
         : null;
 
@@ -661,6 +691,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
       phaseLeadingWidget = const Icon(
         Icons.water_drop_rounded,
         color: Color(0xFFD9577D),
+        size: 28,
+      );
+    } else if (periodStartCorrectionCandidate != null) {
+      final oldStartDate =
+          _dateOnly(periodStartCorrectionCandidate.startDate);
+      final daysEarlier = oldStartDate.difference(selectedDate).inDays;
+
+      statusText =
+          '${_formatDate(oldStartDate)} başlangıçlı regl · başlangıç $daysEarlier gün geriye alınabilir';
+      phaseLeadingWidget = const Icon(
+        Icons.edit_calendar_rounded,
+        color: Color(0xFF7657A8),
         size: 28,
       );
     } else if (periodEndCandidate != null) {
@@ -859,6 +901,52 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ],
         );
       }
+    } else if (periodStartCorrectionCandidate != null) {
+      actionSection = Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3EFF8),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              '${_formatDate(periodStartCorrectionCandidate.startDate)} tarihinde başlayan regl kaydının başlangıcını bu tarihe çekebilirsin. Bu işlem yeni bir geçmiş kayıt oluşturmaz.',
+              style: const TextStyle(
+                fontSize: 12.5,
+                height: 1.35,
+                color: Color(0xFF655A70),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: FilledButton.icon(
+              onPressed: _isSaving
+                  ? null
+                  : () => _confirmUpdatePeriodStart(
+                        periodStartCorrectionCandidate,
+                        selectedDate,
+                      ),
+              icon: const Icon(
+                Icons.water_drop_outlined,
+                size: 18,
+              ),
+              label: const Text(
+                'Reglim bugün başladı',
+                style: TextStyle(fontSize: 13),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7657A8),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      );
     } else if (periodEndCandidate != null) {
       actionSection = Column(
         children: [
@@ -1062,6 +1150,166 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmUpdatePeriodStart(
+    PeriodRecord record,
+    DateTime selectedDate,
+  ) async {
+    final normalizedSelectedDate = _dateOnly(selectedDate);
+    final oldStartDate = _dateOnly(record.startDate);
+    final daysEarlier = oldStartDate.difference(normalizedSelectedDate).inDays;
+
+    if (daysEarlier != 1 && daysEarlier != 2) {
+      return;
+    }
+
+    final shouldUpdate = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Regl başlangıcın güncellensin mi?'),
+          content: Text(
+            'Eski başlangıç: ${_formatDate(oldStartDate)}\n'
+            'Yeni başlangıç: ${_formatDate(normalizedSelectedDate)}\n\n'
+            'Mevcut regl kaydının başlangıcı $daysEarlier gün geriye alınacak. Yeni bir geçmiş regl kaydı oluşturulmayacak.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF7657A8),
+              ),
+              child: const Text('Güncelle'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldUpdate != true) {
+      return;
+    }
+
+    await _updatePeriodStart(record, normalizedSelectedDate);
+  }
+
+  Future<void> _updatePeriodStart(
+    PeriodRecord record,
+    DateTime selectedDate,
+  ) async {
+    final normalizedSelectedDate = _dateOnly(selectedDate);
+    final oldStartDate = _dateOnly(record.startDate);
+    final daysEarlier = oldStartDate.difference(normalizedSelectedDate).inDays;
+
+    if (daysEarlier != 1 && daysEarlier != 2) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final overlapsAnotherRecord = _actualRecords.any((other) {
+        if (_isSameDay(other.startDate, record.startDate)) {
+          return false;
+        }
+
+        final otherStartDate = _dateOnly(other.startDate);
+        final otherEndDate = _dateOnly(other.effectiveEndDate);
+        final updatedEndDate = _dateOnly(record.effectiveEndDate);
+
+        return !updatedEndDate.isBefore(otherStartDate) &&
+            !normalizedSelectedDate.isAfter(otherEndDate);
+      });
+
+      if (overlapsAnotherRecord) {
+        throw StateError('UPDATED_PERIOD_OVERLAPS_EXISTING_PERIOD');
+      }
+
+      final int updatedPredictedLength;
+      if (record.isOngoing) {
+        updatedPredictedLength = record.predictedLength;
+      } else {
+        updatedPredictedLength =
+            _dateOnly(record.effectiveEndDate)
+                    .difference(normalizedSelectedDate)
+                    .inDays +
+                1;
+
+        if (updatedPredictedLength > _maximumPeriodLength) {
+          throw StateError('UPDATED_PERIOD_TOO_LONG');
+        }
+      }
+
+      final updatedRecord = PeriodRecord(
+        startDate: normalizedSelectedDate,
+        endDate: record.endDate == null ? null : _dateOnly(record.endDate!),
+        predictedLength: updatedPredictedLength,
+      );
+
+      final updated = await StorageService.updatePeriodRecord(
+        oldStartDate: record.startDate,
+        updatedRecord: updatedRecord,
+      );
+
+      if (!updated) {
+        throw StateError('Record not found.');
+      }
+
+      await _loadCalendarData(showLoading: false);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Regl başlangıcın ${_formatDate(normalizedSelectedDate)} olarak güncellendi.',
+          ),
+        ),
+      );
+    } on StateError catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final String message;
+      if (error.message == 'UPDATED_PERIOD_OVERLAPS_EXISTING_PERIOD') {
+        message = 'Yeni başlangıç tarihi başka bir regl kaydıyla çakışıyor.';
+      } else if (error.message == 'UPDATED_PERIOD_TOO_LONG') {
+        message =
+            'Bu değişiklik regl süresini $_maximumPeriodLength günden uzun yapacağı için kaydedilemedi.';
+      } else {
+        message = 'Regl başlangıç tarihi güncellenemedi.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Regl başlangıç tarihi güncellenemedi.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   Future<void> _handleStartPeriod() async {
