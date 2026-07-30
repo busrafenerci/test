@@ -1,0 +1,19 @@
+workflows:
+  ios-simulator:
+    name: iOS Simulator Build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      flutter: stable
+      xcode: latest
+
+    scripts:
+      - name: Paketleri yükle
+        script: flutter pub get
+
+      - name: iOS Simulator sürümünü oluştur
+        script: flutter build ios --simulator --debug
+
+    artifacts:
+      - build/ios/iphonesimulator/Runner.app
