@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:within/l10n/app_localizations.dart';
 
 import '../theme/app_colors.dart';
 
@@ -9,7 +10,7 @@ class NumberPicker extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final Color color;
   final Color backgroundColor;
-  final String suffix;
+  final String? suffix;
   final String Function(int value)? valueFormatter;
 
   const NumberPicker({
@@ -20,16 +21,24 @@ class NumberPicker extends StatelessWidget {
     required this.onChanged,
     this.color = AppColors.primary,
     this.backgroundColor = AppColors.primaryLight,
-    this.suffix = 'Gün',
+    this.suffix,
     this.valueFormatter,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     final canDecrease = value > minValue;
     final canIncrease = value < maxValue;
+
+    final localizedSuffix = suffix ??
+        (value == 1
+            ? l10n.daySingular
+            : l10n.dayPlural);
+
     final displayValue =
-        valueFormatter?.call(value) ?? '$value $suffix';
+        valueFormatter?.call(value) ?? '$value $localizedSuffix';
 
     return Container(
       height: 72,
